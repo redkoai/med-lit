@@ -339,9 +339,9 @@ export default function SettingsScreen() {
           <Ionicons name="settings" size={22} color={Colors.accent} />
           <Text style={[styles.navLabel, { color: Colors.accent }]}>Settings</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push(user ? '/settings' : '/auth')}>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push(user ? '/profile' : '/auth')}>
           <Ionicons name={user ? 'person' : 'person-outline'} size={22} color={user ? Colors.science : Colors.textSecondary} />
-          <Text style={[styles.navLabel, user ? { color: Colors.science } : {}]}>{user ? 'Account' : 'Sign in'}</Text>
+          <Text style={[styles.navLabel, user ? { color: Colors.science } : {}]}>{user ? 'Profile' : 'Sign in'}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

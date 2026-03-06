@@ -158,9 +158,9 @@ export default function HistoryScreen() {
           <Ionicons name="settings-outline" size={22} color={Colors.textSecondary} />
           <Text style={styles.navLabel}>Settings</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push(user ? '/settings' : '/auth')}>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push(user ? '/profile' : '/auth')}>
           <Ionicons name={user ? 'person' : 'person-outline'} size={22} color={user ? Colors.science : Colors.textSecondary} />
-          <Text style={[styles.navLabel, user ? { color: Colors.science } : {}]}>{user ? 'Account' : 'Sign in'}</Text>
+          <Text style={[styles.navLabel, user ? { color: Colors.science } : {}]}>{user ? 'Profile' : 'Sign in'}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

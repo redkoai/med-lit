@@ -48,6 +48,13 @@ export default function RootLayout() {
           options={{ title: 'History', headerShown: false }}
         />
         <Stack.Screen
+          name="profile"
+          options={{
+            title: 'Profile',
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
           name="methodology"
           options={{
             title: 'Methodology',

@@ -258,7 +258,7 @@ export default function AuthScreen() {
             <Ionicons name="settings-outline" size={22} color={Colors.textSecondary} />
             <Text style={styles.navLabel}>Settings</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem}>
+          <TouchableOpacity style={styles.navItem} onPress={() => {}}>
             <Ionicons name="person" size={22} color={Colors.accent} />
             <Text style={[styles.navLabel, { color: Colors.accent }]}>Sign in</Text>
           </TouchableOpacity>

@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../src/constants/colors';
 import { useAuth } from '../src/hooks/useAuth';
 import { useSettings } from '../src/hooks/useSettings';
+import type { AIProvider } from '../src/types';
 import { useHistory } from '../src/hooks/useHistory';
 import { useAnalyzeArticle } from '../src/hooks/useAnalyzeArticle';
 import { LoadingState } from '../src/components/LoadingState';
@@ -31,6 +32,16 @@ const EXAMPLE_URLS = [
   'https://doi.org/10.1038/s41586-023-06374-2',
   'https://www.nejm.org/doi/full/10.1056/NEJMoa2300057',
 ];
+
+const PROVIDER_INFO: Record<AIProvider, { label: string; placeholder: string; hint: string; settingsKey: 'claudeApiKey' | 'openAiApiKey' | 'geminiApiKey' }> = {
+  claude: { label: 'Claude (Anthropic)', placeholder: 'sk-ant-...', hint: 'Get yours at console.anthropic.com', settingsKey: 'claudeApiKey' },
+  openai: { label: 'ChatGPT (OpenAI)', placeholder: 'sk-...', hint: 'Get yours at platform.openai.com/api-keys', settingsKey: 'openAiApiKey' },
+  gemini: { label: 'Gemini (Google)', placeholder: 'AIza...', hint: 'Get yours at aistudio.google.com/app/apikey', settingsKey: 'geminiApiKey' },
+};
+
+function getActiveApiKey(settings: { aiProvider: AIProvider; claudeApiKey: string; openAiApiKey: string; geminiApiKey: string }): string {
+  return settings[PROVIDER_INFO[settings.aiProvider].settingsKey];
+}
 
 const FEATURE_PILLS = [
   { icon: 'analytics-outline', label: 'Accuracy Score' },
@@ -72,18 +83,15 @@ export default function HomeScreen() {
   const handleSaveApiKey = useCallback(async () => {
     const key = tempApiKey.trim();
     if (!key) {
-      Alert.alert('No Key', 'Please enter your Claude API key.');
+      Alert.alert('No Key', `Please enter your ${PROVIDER_INFO[settings.aiProvider].label} API key.`);
       return;
     }
-    if (!key.startsWith('sk-ant-')) {
-      Alert.alert('Invalid Key', 'Claude API keys start with "sk-ant-". Please check your key.');
-      return;
-    }
-    await saveSettings({ claudeApiKey: key });
+    const { settingsKey } = PROVIDER_INFO[settings.aiProvider];
+    await saveSettings({ [settingsKey]: key });
     setApiKeyModalVisible(false);
     // Auto-trigger analysis after saving key
     setTimeout(() => handleAnalyze(), 300);
-  }, [tempApiKey, saveSettings, handleAnalyze]);
+  }, [tempApiKey, saveSettings, handleAnalyze, settings.aiProvider]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -168,7 +176,7 @@ export default function HomeScreen() {
             ) : null}
           </View>
 
-          {!settings.claudeApiKey && !isLoading ? (
+          {!getActiveApiKey(settings) && !isLoading ? (
             <TouchableOpacity
               style={styles.apiKeyPrompt}
               onPress={() => { setTempApiKey(''); setShowTempKey(false); setApiKeyModalVisible(true); }}
@@ -179,7 +187,7 @@ export default function HomeScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.apiKeyPromptTitle}>API Key Needed</Text>
                 <Text style={styles.apiKeyPromptText}>
-                  Tap here to add your Claude API key and start analyzing
+                  Tap here to add your {PROVIDER_INFO[settings.aiProvider].label} API key and start analyzing
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={Colors.warning} />
@@ -297,7 +305,7 @@ export default function HomeScreen() {
                 </View>
                 <Text style={modalStyles.title}>API Key Required</Text>
                 <Text style={modalStyles.subtitle}>
-                  Enter your Claude API key to start analyzing articles. Get one free at console.anthropic.com
+                  Enter your {PROVIDER_INFO[settings.aiProvider].label} API key to start analyzing articles. {PROVIDER_INFO[settings.aiProvider].hint}
                 </Text>
               </View>
 
@@ -306,7 +314,7 @@ export default function HomeScreen() {
                   style={modalStyles.input}
                   value={tempApiKey}
                   onChangeText={setTempApiKey}
-                  placeholder="sk-ant-..."
+                  placeholder={PROVIDER_INFO[settings.aiProvider].placeholder}
                   placeholderTextColor={Colors.textTertiary}
                   secureTextEntry={!showTempKey}
                   autoCapitalize="none"
@@ -358,9 +366,9 @@ export default function HomeScreen() {
             <Ionicons name="settings-outline" size={22} color={Colors.textSecondary} />
             <Text style={styles.navLabel}>Settings</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem} onPress={() => router.push(user ? '/settings' : '/auth')}>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push(user ? '/profile' : '/auth')}>
             <Ionicons name={user ? 'person' : 'person-outline'} size={22} color={user ? Colors.science : Colors.textSecondary} />
-            <Text style={[styles.navLabel, user && { color: Colors.science }]}>{user ? 'Account' : 'Sign in'}</Text>
+            <Text style={[styles.navLabel, user && { color: Colors.science }]}>{user ? 'Profile' : 'Sign in'}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
