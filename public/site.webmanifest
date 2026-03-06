@@ -1,0 +1,54 @@
+{
+  "name": "MedLit — Scientific Literature Analyzer",
+  "short_name": "MedLit",
+  "description": "Analyze any medical or scientific paper in seconds. Paste a PubMed, DOI, or journal link—get accuracy scores, bias detection, methods review, and plain-English summaries. Free tool for researchers, clinicians, and students.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F2E4E",
+  "theme_color": "#0F2E4E",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-US",
+  "dir": "ltr",
+  "categories": ["health", "medical", "education", "research", "productivity"],
+  "keywords": "medical literature analyzer, scientific paper analyzer, PubMed analyzer, critical appraisal tool, evidence-based medicine, bias detection",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "label": "MedLit home screen — paste a PubMed or DOI URL to analyze"
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "itunes",
+      "url": "https://apps.apple.com/app/medlit",
+      "id": "com.redko.medlit"
+    },
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.redko.medlit",
+      "id": "com.redko.medlit"
+    }
+  ],
+  "prefer_related_applications": false
+}

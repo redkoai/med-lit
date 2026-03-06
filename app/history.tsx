@@ -6,11 +6,13 @@ import {
   FlatList,
   StyleSheet,
   Alert,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, getScoreColor } from '../src/constants/colors';
+import { useAuth } from '../src/hooks/useAuth';
 import { useHistory } from '../src/hooks/useHistory';
 import type { HistoryEntry } from '../src/types';
 
@@ -18,9 +20,13 @@ function HistoryCard({ entry, onDelete }: { entry: HistoryEntry; onDelete: () =>
   const accuracyColor = getScoreColor(entry.accuracyScore);
   const biasColor = getScoreColor(entry.biasScore);
 
+  const handleTap = () => {
+    router.push({ pathname: '/', params: { url: entry.url } });
+  };
+
   return (
-    <View style={styles.card}>
-      {/* Trust badge */}
+    <TouchableOpacity style={styles.card} onPress={handleTap} activeOpacity={0.7}>
+      {/* Trust badge + delete */}
       <View style={styles.cardHeader}>
         <View
           style={[
@@ -42,7 +48,7 @@ function HistoryCard({ entry, onDelete }: { entry: HistoryEntry; onDelete: () =>
             {entry.trustworthy ? 'Trustworthy' : 'Caution'}
           </Text>
         </View>
-        <TouchableOpacity onPress={onDelete} style={styles.deleteBtn}>
+        <TouchableOpacity onPress={onDelete} style={styles.deleteBtn} activeOpacity={0.6}>
           <Ionicons name="trash-outline" size={15} color={Colors.textTertiary} />
         </TouchableOpacity>
       </View>
@@ -76,12 +82,13 @@ function HistoryCard({ entry, onDelete }: { entry: HistoryEntry; onDelete: () =>
           <Text style={styles.scoreLabel}>Analyzed</Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 export default function HistoryScreen() {
-  const { history, removeFromHistory, clearHistory } = useHistory();
+  const { user } = useAuth();
+  const { history, removeFromHistory, clearHistory } = useHistory(user?.uid ?? null);
 
   const handleClearAll = () => {
     Alert.alert(
@@ -98,27 +105,27 @@ export default function HistoryScreen() {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Analysis History</Text>
         {history.length > 0 ? (
-          <TouchableOpacity onPress={handleClearAll}>
+          <TouchableOpacity onPress={handleClearAll} style={styles.clearAllBtn}>
             <Text style={styles.clearAllText}>Clear all</Text>
           </TouchableOpacity>
         ) : (
-          <View style={{ width: 60 }} />
+          <View style={{ width: 70 }} />
         )}
       </View>
 
       {history.length === 0 ? (
         <View style={styles.empty}>
-          <Ionicons name="time-outline" size={48} color={Colors.textTertiary} />
+          <View style={styles.emptyIcon}>
+            <Ionicons name="time-outline" size={40} color={Colors.textTertiary} />
+          </View>
           <Text style={styles.emptyTitle}>No history yet</Text>
           <Text style={styles.emptyBody}>
             Analyzed articles will appear here.
           </Text>
-          <TouchableOpacity style={styles.analyzeBtn} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.analyzeBtn} onPress={() => router.push('/')} activeOpacity={0.7}>
+            <Ionicons name="sparkles" size={16} color="#fff" />
             <Text style={styles.analyzeBtnText}>Analyze an article</Text>
           </TouchableOpacity>
         </View>
@@ -133,9 +140,29 @@ export default function HistoryScreen() {
             />
           )}
           contentContainerStyle={styles.list}
-          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         />
       )}
+
+      {/* Bottom navbar */}
+      <View style={styles.navbar}>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/')}>
+          <Ionicons name="home-outline" size={22} color={Colors.textSecondary} />
+          <Text style={styles.navLabel}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => {}}>
+          <Ionicons name="time" size={22} color={Colors.accent} />
+          <Text style={[styles.navLabel, { color: Colors.accent }]}>History</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/settings')}>
+          <Ionicons name="settings-outline" size={22} color={Colors.textSecondary} />
+          <Text style={styles.navLabel}>Settings</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push(user ? '/settings' : '/auth')}>
+          <Ionicons name={user ? 'person' : 'person-outline'} size={22} color={user ? Colors.science : Colors.textSecondary} />
+          <Text style={[styles.navLabel, user ? { color: Colors.science } : {}]}>{user ? 'Account' : 'Sign in'}</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -146,23 +173,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
-  backBtn: { padding: 6 },
   headerTitle: {
     flex: 1,
     fontSize: 17,
     fontWeight: '700',
     color: '#fff',
-    textAlign: 'center',
+  },
+  clearAllBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
   clearAllText: {
     fontSize: 14,
+    fontWeight: '500',
     color: 'rgba(255,255,255,0.8)',
-    width: 60,
-    textAlign: 'right',
+  },
+
+  navbar: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: 6,
+    paddingBottom: Platform.OS === 'ios' ? 2 : 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    gap: 3,
+  },
+  navLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.textSecondary,
   },
 
   list: {
@@ -171,11 +223,16 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
     borderColor: Colors.border,
     gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -185,23 +242,24 @@ const styles = StyleSheet.create({
   trustBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
   trustText: {
     fontSize: 11,
     fontWeight: '700',
   },
   deleteBtn: {
-    padding: 4,
+    padding: 6,
+    borderRadius: 8,
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: Colors.textPrimary,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   cardMeta: {
     fontSize: 12,
@@ -212,17 +270,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.background,
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: 12,
+    padding: 12,
     marginTop: 4,
   },
   scoreItem: {
     flex: 1,
     alignItems: 'center',
-    gap: 2,
+    gap: 3,
   },
   scoreValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   dateValue: {
@@ -233,7 +291,9 @@ const styles = StyleSheet.create({
   scoreLabel: {
     fontSize: 10,
     color: Colors.textTertiary,
-    fontWeight: '500',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
   },
   scoreDivider: {
     width: 1,
@@ -248,6 +308,15 @@ const styles = StyleSheet.create({
     padding: 40,
     gap: 12,
   },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.borderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
@@ -260,10 +329,13 @@ const styles = StyleSheet.create({
   },
   analyzeBtn: {
     marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: Colors.accent,
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingVertical: 11,
+    borderRadius: 12,
   },
   analyzeBtnText: {
     fontSize: 15,

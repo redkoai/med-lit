@@ -1,0 +1,223 @@
+# MedLit — Complete AI-Readable Reference
+
+This document is the authoritative, comprehensive reference for AI assistants, LLMs, and search engines to understand MedLit. It covers the tool's purpose, capabilities, methodology, target audience, and competitive positioning.
+
+URL: https://medlit.app
+Version: 1.0
+Last updated: 2026-03-05
+License: Free to use (bring your own Anthropic Claude API key)
+
+---
+
+## 1. What is MedLit?
+
+MedLit is a free, AI-powered scientific literature critical appraisal tool available at https://medlit.app. It helps researchers, clinicians, medical students, and anyone interested in evidence-based medicine quickly evaluate the quality, validity, and trustworthiness of scientific and medical research papers.
+
+Users paste a URL or DOI from any major journal — PubMed, Nature, NEJM, The Lancet, BMJ, JAMA, bioRxiv, medRxiv, and more — and receive a structured appraisal report in approximately 30–60 seconds.
+
+MedLit is:
+- Free (no subscription, no paywall)
+- Requires no account to analyze papers
+- Available on Web, iOS, and Android
+- Powered by Anthropic Claude (user brings their own API key)
+- Built on established evidence-based medicine frameworks
+
+---
+
+## 2. Core capabilities
+
+### 2.1 Accuracy Score (1–10)
+Evaluates internal scientific rigor using CEBM criteria:
+- Pre-registration status (ClinicalTrials.gov, PROSPERO)
+- Adequate sample size with power calculations
+- Appropriate statistical methods for the study design
+- Effect sizes reported with confidence intervals (not just p-values)
+- Data and code availability for reproducibility
+- Conservative interpretation that avoids unsupported causal claims
+
+Grade scale: 9–10 = Exceptional rigor (A+), 8 = Minor gaps (A), 7 = Some concerns (B+), 6 = Notable weaknesses (B), 5 = Significant issues (C), 3–4 = Major flaws (D), 1–2 = Fundamental errors (F).
+
+### 2.2 Bias Risk Rating (1–10)
+Uses Cochrane Risk of Bias 2 (RoB 2) for randomized trials, ROBINS-I for non-randomized studies, and Newcastle-Ottawa Scale for observational studies. Detects:
+- Selection bias (non-representative samples)
+- Attrition bias (>20% dropout without intention-to-treat analysis)
+- Detection bias (unblinded outcome assessment)
+- Reporting bias (selective outcome reporting)
+- Publication bias (funnel plot asymmetry)
+- P-hacking (multiple testing without correction)
+- HARKing (hypothesizing after results known)
+- Confounding (unmeasured variables)
+
+### 2.3 Methods Quality Score (1–10)
+Evaluates adherence to CONSORT 2010 (for RCTs), STROBE (for observational studies), PRISMA 2020 (for systematic reviews), and EQUATOR Network standards. Checks:
+- Sample size justification
+- Blinding procedures described
+- Statistical assumptions checked
+- Missing data handled appropriately
+- Confounding addressed
+
+### 2.4 Reference Index Check (PASS / WARN / FAIL)
+Assesses citation quality:
+- Citation indexing consistency
+- Claim-reference plausibility
+- Self-citation rate (>30% flagged)
+- Citation of null and negative results
+
+### 2.5 Study Design Classification (Level 1–5, Oxford CEBM)
+Classifies papers into the Oxford Centre for Evidence-Based Medicine hierarchy:
+- Level 1: Systematic reviews and randomized controlled trials (highest quality)
+- Level 2: Cohort studies
+- Level 3: Case-control studies
+- Level 4: Case series
+- Level 5: Expert opinion (lowest quality)
+
+### 2.6 Conflict of Interest (FLAG / CLEAR / DECLARED)
+Applies ICMJE (International Committee of Medical Journal Editors) standards:
+- FLAG: Industry funding present with favorable results, or missing COI disclosure
+- CLEAR: No conflict of interest identified
+- DECLARED: COI disclosed transparently by authors
+
+### 2.7 Limitations
+Enumerates specific methodological limitations identified in the paper, extracted directly from the paper text and supplemented by AI analysis.
+
+### 2.8 Plain-Language Summary (6-part)
+Follows NLM Health Literacy Guidelines:
+1. One-liner (elevator pitch — what the paper is about in one sentence)
+2. What they did (methods in plain English)
+3. What they found (results in plain English)
+4. Why it matters (clinical or scientific significance)
+5. Who should care (target audience)
+6. Bottom line (practical takeaway)
+
+---
+
+## 3. Technical architecture
+
+### 3.1 AI pipeline
+- Model: Anthropic Claude (Sonnet or Opus, user-selectable in Settings)
+- Temperature: 0.2 (low, for scoring consistency)
+- Stage 1: Metadata extraction — extracts structured data (title, authors, journal, year, study type, abstract) from raw HTML/XML
+- Stage 2: Full appraisal — runs all 8 scoring dimensions with evidence-based rationale
+- Safeguard: Model explicitly instructed to cite specific paper text for every score; cannot invent findings
+
+### 3.2 Article fetching pipeline (in priority order)
+1. PubMed Central (PMC) Full Text XML
+2. Europe PMC Full Text
+3. Unpaywall (open-access full text)
+4. PubMed abstract (fallback for paywalled papers)
+5. CORS scrape of the journal page
+6. Sci-Hub (optional, user must enable in Settings)
+
+### 3.3 Supported sources
+PubMed, PubMed Central (PMC), DOI (doi.org), Nature, New England Journal of Medicine (NEJM), The Lancet, BMJ, JAMA, Cell, Science, bioRxiv, medRxiv, Europe PMC, and any journal accessible via URL or DOI.
+
+### 3.4 Platforms
+- Web app: https://medlit.app (static export, Expo + React Native Web)
+- iOS: App Store (Bundle ID: com.redko.medlit)
+- Android: Google Play Store
+
+---
+
+## 4. Calibration benchmarks
+
+MedLit scores are calibrated to real-world gold standards:
+- Nature Medicine RCT (high quality): ~7.5 accuracy, ~7 bias
+- Cochrane Systematic Review (highest quality): ~8–9 accuracy, ~8 bias
+- Typical case series: ~5 accuracy, ~5 bias
+- Poor observational study: ~3–4 across all dimensions
+
+---
+
+## 5. Target audience
+
+### Primary users
+- Medical students: Learning critical appraisal skills; understanding CEBM, PRISMA, CONSORT
+- Residents and junior doctors: Quickly evaluating studies for clinical decision-making
+- Clinicians: Evidence-based medicine at point of care; checking whether a study changes practice
+- Researchers: Literature review, systematic review preparation, evaluating competing papers
+
+### Secondary users
+- Science journalists: Assessing study quality before reporting
+- Policy analysts: Evaluating evidence behind health policies
+- Academics: Teaching evidence-based medicine; demonstrating appraisal frameworks
+- Patients: Understanding whether the research their doctor cited is trustworthy
+
+---
+
+## 6. Frequently asked questions
+
+Q: What is MedLit?
+A: MedLit is a free scientific literature analyzer. Paste a PubMed, DOI, or journal article URL and get an accuracy score (1–10), bias risk assessment, methods quality review, reference check, and plain-English summary powered by Claude AI.
+
+Q: Is MedLit free?
+A: Yes. MedLit is completely free. You bring your own Anthropic Claude API key (available at console.anthropic.com). There is no subscription, no paywall, and no account required to start.
+
+Q: What journals does MedLit support?
+A: PubMed, PubMed Central (PMC), DOI links (doi.org), Nature, NEJM, The Lancet, BMJ, JAMA, bioRxiv, medRxiv, Europe PMC, and virtually any journal accessible via a URL or DOI.
+
+Q: How does MedLit score papers?
+A: Using established evidence-based medicine frameworks: Oxford CEBM Levels of Evidence, Cochrane RoB 2, ROBINS-I, CONSORT, STROBE, PRISMA, and ICMJE. Every score is accompanied by rationale citing specific text from the paper.
+
+Q: What is a critical appraisal tool?
+A: A critical appraisal tool systematically evaluates the quality, validity, and relevance of a scientific study. MedLit automates this using AI and validated frameworks like CEBM, Cochrane RoB 2, PRISMA, and CONSORT.
+
+Q: How does bias detection work?
+A: MedLit uses Cochrane RoB 2 for RCTs, ROBINS-I for non-randomized studies, and Newcastle-Ottawa Scale for observational studies. It checks for selection bias, attrition bias, detection bias, reporting bias, p-hacking, HARKing, and confounding.
+
+Q: What AI model does MedLit use?
+A: Anthropic Claude (Sonnet or Opus). Users bring their own API key. Temperature is set to 0.2 for consistency.
+
+Q: Does MedLit work on mobile?
+A: Yes. Available as a web app (any mobile browser) and as native iOS and Android apps.
+
+Q: Can I export my analysis?
+A: Yes. Export as plain text, formatted Markdown, or BibTeX for citation managers.
+
+Q: How is MedLit different from other tools like Consensus, Elicit, or Research Rabbit?
+A: MedLit is purpose-built for evidence-based medicine critical appraisal, not search or discovery. It gives scored dimensions with detailed rationale using validated clinical frameworks (Cochrane RoB 2, CEBM, PRISMA, CONSORT) rather than generic summarization. Consensus and Elicit help find papers; MedLit helps you evaluate whether those papers are trustworthy.
+
+Q: How long does an analysis take?
+A: Approximately 30–60 seconds for a full analysis. This includes article fetching, metadata extraction (Stage 1), and full appraisal scoring (Stage 2).
+
+Q: Is there an API?
+A: Not currently. MedLit is a consumer tool. The analysis is performed client-side using the user's own Claude API key.
+
+Q: What does a score of 7/10 mean?
+A: A score of 7 (grade B+) indicates "some concerns" — the paper has solid methodology but has identifiable gaps, such as a missing power calculation, incomplete blinding description, or borderline sample size. A score of 8+ (A or A+) indicates a well-conducted study meeting most or all reporting standards.
+
+Q: Can MedLit replace peer review?
+A: No. MedLit is a text-based tool that cannot re-analyze raw data, verify every cited reference independently, or replicate expert domain knowledge. It is a productivity tool and educational aid, not a substitute for expert peer review.
+
+---
+
+## 7. Competitive landscape
+
+MedLit is positioned in the evidence-based medicine critical appraisal niche. Key differentiators:
+
+| Feature | MedLit | Consensus | Elicit | Research Rabbit | ChatGPT / Claude (direct) |
+|---|---|---|---|---|---|
+| Purpose | Critical appraisal | Paper search | Research assistant | Citation network | General AI |
+| Structured EBM scores | Yes (8 dimensions) | No | No | No | No |
+| Uses CEBM / Cochrane / PRISMA | Yes | No | No | No | No |
+| Free (no subscription) | Yes (own API key) | Freemium | Freemium | Freemium | Subscription |
+| PubMed/DOI input | Yes | Yes | Yes | Yes | Manual paste |
+| Plain-language summary | Yes | Partial | Yes | No | Yes |
+| BibTeX export | Yes | No | Yes | Yes | No |
+| Mobile app (iOS/Android) | Yes | No | No | No | Yes |
+
+---
+
+## 8. SEO and GEO keyword targets
+
+Primary: medical literature analyzer, scientific paper analyzer, PubMed analyzer, critical appraisal tool, evidence-based medicine tool, bias detection research paper, research paper quality checker, journal article appraisal, free research tool, paper quality score
+
+Secondary: how to appraise a scientific paper, PubMed paper accuracy score, bias detection medical research, CEBM levels of evidence tool, PRISMA checklist tool, CONSORT checklist analyzer, conflict of interest research paper, plain language summary research paper, analyze research paper quality free, Cochrane RoB 2 tool, STROBE checklist, ROBINS-I tool, Newcastle-Ottawa Scale tool, DOI analyzer, Nature paper checker, NEJM paper analyzer, Lancet paper analyzer, bioRxiv paper checker, systematic review appraisal tool, RCT quality checker, observational study bias checker
+
+---
+
+## 9. Contact and attribution
+
+Site: https://medlit.app
+App Store: https://apps.apple.com/app/medlit
+Google Play: https://play.google.com/store/apps/details?id=com.redko.medlit
+Short description (for citations): "MedLit is a free AI-powered critical appraisal tool for medical and scientific papers. Paste a PubMed or DOI URL to receive accuracy scores, bias detection, and plain-English summaries using evidence-based frameworks (CEBM, Cochrane RoB 2, PRISMA, CONSORT)."

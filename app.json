@@ -2,7 +2,9 @@
   "expo": {
     "name": "MedLit",
     "slug": "med-lit",
+    "owner": "redko",
     "version": "1.0.0",
+    "description": "Analyze any medical or scientific paper in seconds. Paste a PubMed, DOI, or journal link—get accuracy scores, bias detection, and plain-English summaries. Free for researchers, clinicians, and students.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -14,27 +16,50 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.medlit.app"
+      "bundleIdentifier": "com.redko.medlit",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0F2E4E"
       },
-      "package": "com.medlit.app"
+      "package": "com.redko.medlit",
+      "permissions": [
+        "INTERNET"
+      ]
     },
     "web": {
       "bundler": "metro",
       "favicon": "./assets/favicon.png",
-      "output": "static"
+      "output": "static",
+      "name": "MedLit — Scientific Literature Analyzer",
+      "shortName": "MedLit",
+      "description": "Free medical & scientific paper analyzer. PubMed, DOI, Nature, NEJM. Accuracy scores, bias detection, plain-language summaries.",
+      "themeColor": "#0F2E4E",
+      "lang": "en"
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      "expo-dev-client"
     ],
     "experiments": {
       "typedRoutes": true
     },
-    "scheme": "medlit"
+    "scheme": "medlit",
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "cd20c1d0-14cf-4aff-b5c1-eae49e99b307"
+      }
+    }
   }
 }

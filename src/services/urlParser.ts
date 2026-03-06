@@ -1,5 +1,13 @@
 import type { ArticleIdentifier, SourceType } from '../types';
 
+function tryDecodeURIComponent(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
 // ─── URL Pattern Matchers ─────────────────────────────────────────────────────
 
 const patterns: Array<{
@@ -63,11 +71,11 @@ const patterns: Array<{
   {
     name: 'lancet',
     test: (url) => {
-      // Pattern: thelancet.com/journals/lancet/article/PIIS0140-6736(23)01237-5/fulltext
+      // Pattern: thelancet.com/journals/landig/article/piis2589-7500(20)30017-0/fulltext (decode %28/%29)
       const piiMatch = url.match(/thelancet\.com.*?article\/(PII[^/?#]+)/i);
       if (piiMatch) {
-        // Convert PII to DOI: PIIS0140-6736(23)01237-5 → 10.1016/S0140-6736(23)01237-5
-        const pii = piiMatch[1];
+        const raw = piiMatch[1];
+        const pii = tryDecodeURIComponent(raw);
         const doi = '10.1016/' + pii.replace(/^PII/i, '');
         return { doi, sourceType: 'lancet', originalUrl: url };
       }

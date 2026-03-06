@@ -1,10 +1,11 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Colors } from '../src/constants/colors';
+import { AuthProvider } from '../src/hooks/useAuth';
 
 export default function RootLayout() {
   return (
-    <>
+    <AuthProvider>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -16,7 +17,15 @@ export default function RootLayout() {
       >
         <Stack.Screen
           name="index"
-          options={{ title: 'MedLit', headerLargeTitle: false }}
+          options={{ title: 'MedLit', headerShown: false }}
+        />
+        <Stack.Screen
+          name="auth"
+          options={{
+            title: 'Sign In',
+            presentation: 'modal',
+            headerShown: false,
+          }}
         />
         <Stack.Screen
           name="analysis"
@@ -31,14 +40,22 @@ export default function RootLayout() {
           options={{
             title: 'Settings',
             presentation: 'modal',
-            headerStyle: { backgroundColor: Colors.primary },
+            headerShown: false,
           }}
         />
         <Stack.Screen
           name="history"
-          options={{ title: 'History' }}
+          options={{ title: 'History', headerShown: false }}
+        />
+        <Stack.Screen
+          name="methodology"
+          options={{
+            title: 'Methodology',
+            presentation: 'modal',
+            headerStyle: { backgroundColor: Colors.primary },
+          }}
         />
       </Stack>
-    </>
+    </AuthProvider>
   );
 }

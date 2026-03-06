@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import type { RawArticleData, ArticleAnalysis, ArticleIdentifier } from '../types';
 import {
   ANALYSIS_SYSTEM_PROMPT,
@@ -6,6 +5,51 @@ import {
   EXTRACTION_SYSTEM_PROMPT,
   buildExtractionPrompt,
 } from '../constants/prompts';
+
+// ─── Claude API via fetch (React Native compatible) ──────────────────────────
+
+const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
+
+interface ClaudeMessage {
+  content: Array<{ type: string; text?: string }>;
+}
+
+async function callClaude(
+  apiKey: string,
+  model: string,
+  system: string,
+  userMessage: string,
+  maxTokens: number,
+  temperature: number,
+): Promise<string> {
+  const res = await fetch(ANTHROPIC_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: maxTokens,
+      temperature,
+      system,
+      messages: [{ role: 'user', content: userMessage }],
+    }),
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`Claude API error (${res.status}): ${errorBody}`);
+  }
+
+  const message: ClaudeMessage = await res.json();
+  return message.content
+    .filter((block) => block.type === 'text')
+    .map((block) => block.text || '')
+    .join('');
+}
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -53,35 +97,13 @@ export async function analyzeArticle(
 ): Promise<ArticleAnalysis> {
   const progress = onProgress || (() => {});
 
-  const client = new Anthropic({
-    apiKey,
-    dangerouslyAllowBrowser: true,
-  });
-
   const articleText = buildArticleText(article);
   const isFullText = article.fetchSource === 'full_text';
 
   progress('Sending article to Claude for analysis...');
 
   const analysisPrompt = buildAnalysisPrompt(articleText, isFullText);
-
-  const message = await client.messages.create({
-    model,
-    max_tokens: 4096,
-    temperature: 0.2,
-    system: ANALYSIS_SYSTEM_PROMPT,
-    messages: [
-      {
-        role: 'user',
-        content: analysisPrompt,
-      },
-    ],
-  });
-
-  const responseText = message.content
-    .filter((block) => block.type === 'text')
-    .map((block) => (block as { type: 'text'; text: string }).text)
-    .join('');
+  const responseText = await callClaude(apiKey, model, ANALYSIS_SYSTEM_PROMPT, analysisPrompt, 4096, 0.2);
 
   // Extract JSON from response (handle potential markdown code blocks)
   let jsonStr = responseText.trim();
@@ -134,31 +156,12 @@ export async function extractMetadataFromRawHtml(
   apiKey: string,
   model: string
 ): Promise<Partial<RawArticleData>> {
-  const client = new Anthropic({
-    apiKey,
-    dangerouslyAllowBrowser: true,
-  });
-
-  const message = await client.messages.create({
-    model,
-    max_tokens: 1024,
-    temperature: 0,
-    system: EXTRACTION_SYSTEM_PROMPT,
-    messages: [
-      {
-        role: 'user',
-        content: buildExtractionPrompt(rawHtml),
-      },
-    ],
-  });
-
-  const responseText = message.content
-    .filter((block) => block.type === 'text')
-    .map((block) => (block as { type: 'text'; text: string }).text)
-    .join('');
+  const responseText = await callClaude(
+    apiKey, model, EXTRACTION_SYSTEM_PROMPT, buildExtractionPrompt(rawHtml), 1024, 0
+  );
 
   try {
-    const jsonStr = responseText.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    const jsonStr = responseText.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/,  '');
     return JSON.parse(jsonStr);
   } catch {
     return {};

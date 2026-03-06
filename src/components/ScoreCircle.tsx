@@ -13,7 +13,7 @@ interface Props {
 const SIZES = {
   small: { circle: 64, font: 18, label: 10 },
   medium: { circle: 84, font: 24, label: 11 },
-  large: { circle: 104, font: 30, label: 12 },
+  large: { circle: 100, font: 28, label: 12 },
 };
 
 export function ScoreCircle({ score, label, subtitle, size = 'medium', inverted = false }: Props) {

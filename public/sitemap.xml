@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+
+  <!-- Home — highest priority, crawled weekly -->
+  <url>
+    <loc>https://medlit.app/</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://medlit.app/og-image.png</image:loc>
+      <image:title>MedLit — Scientific Literature Analyzer</image:title>
+      <image:caption>Paste a PubMed or DOI link. Get accuracy scores, bias detection, and plain-English summaries.</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Methodology — long-tail SEO "how it works", "critical appraisal frameworks" -->
+  <url>
+    <loc>https://medlit.app/methodology</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- FAQ — long-tail keyword hub, AI citation source -->
+  <url>
+    <loc>https://medlit.app/faq</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Analysis result page -->
+  <url>
+    <loc>https://medlit.app/analysis</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- History page -->
+  <url>
+    <loc>https://medlit.app/history</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Settings page -->
+  <url>
+    <loc>https://medlit.app/settings</loc>
+    <lastmod>2026-03-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+</urlset>

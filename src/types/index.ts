@@ -186,11 +186,33 @@ export interface ArticleAnalysis {
   analysisVersion: string;
 }
 
+// ─── AI Provider ──────────────────────────────────────────────────────────────
+
+export type AIProvider = 'claude' | 'openai' | 'gemini';
+
+export type ClaudeModel = 'claude-sonnet-4-6' | 'claude-opus-4-6';
+export type OpenAIModel = 'gpt-4o' | 'gpt-4o-mini' | 'gpt-4-turbo';
+export type GeminiModel = 'gemini-2.0-flash' | 'gemini-1.5-pro';
+
 // ─── App Settings ─────────────────────────────────────────────────────────────
 
 export interface AppSettings {
+  // Active provider
+  aiProvider: AIProvider;
+
+  // Claude (Anthropic)
   claudeApiKey: string;
-  claudeModel: 'claude-sonnet-4-6' | 'claude-opus-4-6';
+  claudeModel: ClaudeModel;
+
+  // OpenAI
+  openAiApiKey: string;
+  openAiModel: OpenAIModel;
+
+  // Google Gemini
+  geminiApiKey: string;
+  geminiModel: GeminiModel;
+
+  // Article fetching
   unpaywallEmail: string;
   sciHubEnabled: boolean;
   sciHubMirror: string;

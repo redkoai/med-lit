@@ -8,44 +8,91 @@ import {
   StyleSheet,
   Switch,
   Alert,
+  Platform,
+  Linking,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../src/constants/colors';
+import { useAuth } from '../src/hooks/useAuth';
 import { useSettings } from '../src/hooks/useSettings';
-import type { AppSettings } from '../src/types';
+import { SettingRow } from '../src/components/SettingRow';
+import { SectionHeader } from '../src/components/SectionHeader';
+import type { AppSettings, AIProvider, ClaudeModel, OpenAIModel, GeminiModel } from '../src/types';
 
-function SettingRow({ label, subtitle, children }: { label: string; subtitle?: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.settingRow}>
-      <View style={styles.settingLabelBlock}>
-        <Text style={styles.settingLabel}>{label}</Text>
-        {subtitle ? <Text style={styles.settingSubtitle}>{subtitle}</Text> : null}
-      </View>
-      <View style={styles.settingControl}>{children}</View>
-    </View>
-  );
-}
+const PROVIDERS: { id: AIProvider; label: string; icon: string }[] = [
+  { id: 'claude',  label: 'Claude',   icon: 'sparkles' },
+  { id: 'openai',  label: 'ChatGPT',  icon: 'chatbubble-ellipses' },
+  { id: 'gemini',  label: 'Gemini',   icon: 'planet' },
+];
 
-function SectionHeader({ title }: { title: string }) {
-  return <Text style={styles.sectionHeader}>{title.toUpperCase()}</Text>;
-}
+const PROVIDER_META: Record<AIProvider, {
+  keyLabel: string;
+  keyPlaceholder: string;
+  keyUrl: string;
+  keyUrlLabel: string;
+  models: { id: string; label: string }[];
+}> = {
+  claude: {
+    keyLabel: 'Anthropic API Key',
+    keyPlaceholder: 'sk-ant-...',
+    keyUrl: 'https://console.anthropic.com/',
+    keyUrlLabel: 'console.anthropic.com',
+    models: [
+      { id: 'claude-sonnet-4-6', label: 'Claude Sonnet (faster)' },
+      { id: 'claude-opus-4-6',   label: 'Claude Opus (thorough)' },
+    ],
+  },
+  openai: {
+    keyLabel: 'OpenAI API Key',
+    keyPlaceholder: 'sk-...',
+    keyUrl: 'https://platform.openai.com/api-keys',
+    keyUrlLabel: 'platform.openai.com',
+    models: [
+      { id: 'gpt-4o',       label: 'GPT-4o (recommended)' },
+      { id: 'gpt-4o-mini',  label: 'GPT-4o Mini (faster)' },
+      { id: 'gpt-4-turbo',  label: 'GPT-4 Turbo' },
+    ],
+  },
+  gemini: {
+    keyLabel: 'Google AI API Key',
+    keyPlaceholder: 'AIza...',
+    keyUrl: 'https://aistudio.google.com/app/apikey',
+    keyUrlLabel: 'aistudio.google.com',
+    models: [
+      { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (fast)' },
+      { id: 'gemini-1.5-pro',   label: 'Gemini 1.5 Pro (thorough)' },
+    ],
+  },
+};
 
 export default function SettingsScreen() {
-  const { settings, saveSettings, clearSettings } = useSettings();
-  const [apiKey, setApiKey] = useState(settings.claudeApiKey);
-  const [showApiKey, setShowApiKey] = useState(false);
+  const { user } = useAuth();
+  const { settings, saveSettings, clearSettings } = useSettings(user?.uid ?? null);
+
+  const [claudeKey,   setClaudeKey]   = useState(settings.claudeApiKey);
+  const [openAiKey,   setOpenAiKey]   = useState(settings.openAiApiKey);
+  const [geminiKey,   setGeminiKey]   = useState(settings.geminiApiKey);
+  const [showKey,     setShowKey]     = useState(false);
   const [unpaywallEmail, setUnpaywallEmail] = useState(settings.unpaywallEmail);
-  const [sciHubMirror, setSciHubMirror] = useState(settings.sciHubMirror);
+  const [sciHubMirror,   setSciHubMirror]   = useState(settings.sciHubMirror);
   const [saving, setSaving] = useState(false);
+
+  const provider = settings.aiProvider ?? 'claude';
+  const meta = PROVIDER_META[provider];
+
+  const activeKey    = provider === 'openai' ? openAiKey  : provider === 'gemini' ? geminiKey  : claudeKey;
+  const setActiveKey = provider === 'openai' ? setOpenAiKey : provider === 'gemini' ? setGeminiKey : setClaudeKey;
 
   const handleSave = async () => {
     setSaving(true);
     await saveSettings({
-      claudeApiKey: apiKey.trim(),
+      claudeApiKey:  claudeKey.trim(),
+      openAiApiKey:  openAiKey.trim(),
+      geminiApiKey:  geminiKey.trim(),
       unpaywallEmail: unpaywallEmail.trim(),
-      sciHubMirror: sciHubMirror.trim(),
+      sciHubMirror:   sciHubMirror.trim(),
     });
     setSaving(false);
     Alert.alert('Saved', 'Settings saved successfully.');
@@ -70,9 +117,6 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
-          <Ionicons name="close" size={22} color="#fff" />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
         <TouchableOpacity onPress={handleSave} style={styles.saveBtn} disabled={saving}>
           <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save'}</Text>
@@ -81,24 +125,65 @@ export default function SettingsScreen() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
 
-        {/* Claude AI */}
-        <SectionHeader title="Claude AI" />
+        {/* AI Provider */}
+        <SectionHeader title="AI Provider" />
+
+        {/* Provider picker */}
+        <View style={styles.providerRow}>
+          {PROVIDERS.map((p) => {
+            const active = provider === p.id;
+            return (
+              <TouchableOpacity
+                key={p.id}
+                style={[styles.providerBtn, active && styles.providerBtnActive]}
+                onPress={() => saveSettings({ aiProvider: p.id })}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={p.icon as 'sparkles'}
+                  size={16}
+                  color={active ? '#fff' : Colors.textSecondary}
+                />
+                <Text style={[styles.providerBtnText, active && styles.providerBtnTextActive]}>
+                  {p.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Key + model for the active provider */}
         <View style={styles.card}>
-          <SettingRow label="API Key" subtitle="Get yours at console.anthropic.com">
+          {/* Security notice */}
+          <View style={styles.securityBanner}>
+            <Ionicons name="lock-closed" size={13} color={Colors.success} />
+            <Text style={styles.securityText}>
+              Your API key is stored only on this device and sent directly to {
+                provider === 'openai' ? 'OpenAI' : provider === 'gemini' ? 'Google' : 'Anthropic'
+              }. MedLit never sees or stores it.
+            </Text>
+          </View>
+
+          <View style={styles.divider} />
+
+          <SettingRow
+            label={meta.keyLabel}
+            subtitle={`Get yours at ${meta.keyUrlLabel}`}
+          >
             <View style={styles.apiKeyRow}>
               <TextInput
                 style={styles.apiKeyInput}
-                value={apiKey}
-                onChangeText={setApiKey}
-                placeholder="sk-ant-..."
+                value={activeKey}
+                onChangeText={setActiveKey}
+                placeholder={meta.keyPlaceholder}
                 placeholderTextColor={Colors.textTertiary}
-                secureTextEntry={!showApiKey}
+                secureTextEntry={!showKey}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-              <TouchableOpacity onPress={() => setShowApiKey((v) => !v)}>
+              <TouchableOpacity onPress={() => setShowKey((v) => !v)} style={styles.eyeBtn}>
                 <Ionicons
-                  name={showApiKey ? 'eye-off-outline' : 'eye-outline'}
+                  name={showKey ? 'eye-off-outline' : 'eye-outline'}
                   size={18}
                   color={Colors.textSecondary}
                 />
@@ -106,29 +191,42 @@ export default function SettingsScreen() {
             </View>
           </SettingRow>
 
+          <TouchableOpacity
+            style={styles.getKeyLink}
+            onPress={() => Linking.openURL(meta.keyUrl)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="open-outline" size={13} color={Colors.accent} />
+            <Text style={styles.getKeyLinkText}>Get API key at {meta.keyUrlLabel}</Text>
+          </TouchableOpacity>
+
           <View style={styles.divider} />
 
-          <SettingRow label="Model" subtitle="Opus is more thorough; Sonnet is faster">
+          <SettingRow label="Model" subtitle="Select the model to use for analysis">
             <View style={styles.modelToggle}>
-              {(['claude-sonnet-4-6', 'claude-opus-4-6'] as AppSettings['claudeModel'][]).map((m) => (
-                <TouchableOpacity
-                  key={m}
-                  style={[
-                    styles.modelOption,
-                    settings.claudeModel === m && styles.modelOptionActive,
-                  ]}
-                  onPress={() => saveSettings({ claudeModel: m })}
-                >
-                  <Text
-                    style={[
-                      styles.modelOptionText,
-                      settings.claudeModel === m && styles.modelOptionTextActive,
-                    ]}
+              {meta.models.map((m) => {
+                const currentModel =
+                  provider === 'openai' ? settings.openAiModel :
+                  provider === 'gemini' ? settings.geminiModel :
+                  settings.claudeModel;
+                const isActive = currentModel === m.id;
+                return (
+                  <TouchableOpacity
+                    key={m.id}
+                    style={[styles.modelOption, isActive && styles.modelOptionActive]}
+                    onPress={() => {
+                      if (provider === 'openai') saveSettings({ openAiModel: m.id as OpenAIModel });
+                      else if (provider === 'gemini') saveSettings({ geminiModel: m.id as GeminiModel });
+                      else saveSettings({ claudeModel: m.id as ClaudeModel });
+                    }}
+                    activeOpacity={0.7}
                   >
-                    {m.includes('sonnet') ? 'Sonnet' : 'Opus'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text style={[styles.modelOptionText, isActive && styles.modelOptionTextActive]}>
+                      {m.label.split(' ')[0]}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </SettingRow>
         </View>
@@ -200,23 +298,52 @@ export default function SettingsScreen() {
         </View>
 
         {/* Methodology note */}
-        <View style={styles.methodologyNote}>
-          <Ionicons name="document-text-outline" size={16} color={Colors.textSecondary} />
-          <Text style={styles.methodologyText}>
-            Analysis uses Cochrane RoB 2, STROBE, CONSORT, PRISMA 2020, and Oxford CEBM
-            frameworks. See METHODOLOGY.md for full details.
-          </Text>
-        </View>
+        <TouchableOpacity
+          style={styles.methodologyNote}
+          onPress={() => router.push('/methodology')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.methodologyIcon}>
+            <Ionicons name="document-text-outline" size={18} color={Colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.methodologyTitle}>How MedLit Works</Text>
+            <Text style={styles.methodologyText}>
+              Learn about scoring frameworks, bias detection, and AI analysis methods
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+        </TouchableOpacity>
 
         {/* Danger zone */}
         <SectionHeader title="Danger Zone" />
-        <TouchableOpacity style={styles.dangerBtn} onPress={handleClearHistory}>
+        <TouchableOpacity style={styles.dangerBtn} onPress={handleClearHistory} activeOpacity={0.7}>
           <Ionicons name="trash-outline" size={16} color={Colors.danger} />
           <Text style={styles.dangerBtnText}>Clear all history</Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Bottom navbar */}
+      <View style={styles.navbar}>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/')}>
+          <Ionicons name="home-outline" size={22} color={Colors.textSecondary} />
+          <Text style={styles.navLabel}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/history')}>
+          <Ionicons name="time-outline" size={22} color={Colors.textSecondary} />
+          <Text style={styles.navLabel}>History</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => {}}>
+          <Ionicons name="settings" size={22} color={Colors.accent} />
+          <Text style={[styles.navLabel, { color: Colors.accent }]}>Settings</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push(user ? '/settings' : '/auth')}>
+          <Ionicons name={user ? 'person' : 'person-outline'} size={22} color={user ? Colors.science : Colors.textSecondary} />
+          <Text style={[styles.navLabel, user ? { color: Colors.science } : {}]}>{user ? 'Account' : 'Sign in'}</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -227,23 +354,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
-  closeBtn: { padding: 6 },
   headerTitle: {
     flex: 1,
     fontSize: 17,
     fontWeight: '700',
     color: '#fff',
-    textAlign: 'center',
   },
   saveBtn: {
     backgroundColor: Colors.accent,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
   },
   saveBtnText: {
     fontSize: 14,
@@ -253,21 +377,17 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: 16, gap: 0 },
 
-  sectionHeader: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-    letterSpacing: 0.8,
-    marginTop: 20,
-    marginBottom: 8,
-    marginLeft: 4,
-  },
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.border,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   cardWarning: {
     borderColor: Colors.warning,
@@ -277,39 +397,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.borderLight,
     marginHorizontal: 14,
   },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    gap: 12,
-  },
-  settingLabelBlock: {
-    flex: 1,
-    gap: 2,
-  },
-  settingLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  settingSubtitle: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    lineHeight: 16,
-  },
-  settingControl: {
-    alignItems: 'flex-end',
-  },
 
   apiKeyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.background,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.border,
-    paddingHorizontal: 10,
-    gap: 8,
+    paddingLeft: 10,
+    paddingRight: 4,
     width: 180,
   },
   apiKeyInput: {
@@ -318,14 +415,17 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     paddingVertical: 8,
   },
+  eyeBtn: {
+    padding: 6,
+  },
 
   textInput: {
     backgroundColor: Colors.background,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.border,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 9,
     fontSize: 13,
     color: Colors.textPrimary,
     width: 160,
@@ -335,13 +435,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: 8,
+    borderRadius: 10,
     overflow: 'hidden',
+    backgroundColor: Colors.background,
   },
   modelOption: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    backgroundColor: Colors.background,
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   modelOptionActive: {
     backgroundColor: Colors.accent,
@@ -372,29 +474,48 @@ const styles = StyleSheet.create({
 
   methodologyNote: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
+    alignItems: 'center',
+    gap: 12,
     marginTop: 20,
-    padding: 14,
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: 12,
+    padding: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  methodologyIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: Colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  methodologyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: 2,
   },
   methodologyText: {
-    flex: 1,
     fontSize: 12,
     color: Colors.textSecondary,
-    lineHeight: 18,
+    lineHeight: 17,
   },
 
   dangerBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
     padding: 14,
     backgroundColor: Colors.dangerLight,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: Colors.danger,
   },
@@ -402,5 +523,86 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: Colors.danger,
+  },
+
+  providerRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  providerBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  providerBtnActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  providerBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+  },
+  providerBtnTextActive: {
+    color: '#fff',
+  },
+  securityBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 7,
+    padding: 12,
+    backgroundColor: '#F0FDF4',
+  },
+  securityText: {
+    flex: 1,
+    fontSize: 12,
+    color: Colors.success,
+    lineHeight: 17,
+    fontWeight: '500',
+  },
+  getKeyLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingBottom: 12,
+  },
+  getKeyLinkText: {
+    fontSize: 12,
+    color: Colors.accent,
+    fontWeight: '600',
+  },
+
+  navbar: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: 6,
+    paddingBottom: Platform.OS === 'ios' ? 2 : 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    gap: 3,
+  },
+  navLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.textSecondary,
   },
 });

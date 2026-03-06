@@ -1,0 +1,57 @@
+# MedLit
+
+> Free AI-powered scientific literature analyzer for researchers, clinicians, and medical students. Paste any PubMed, DOI, or journal URL and get a multi-dimensional critical appraisal report in seconds.
+
+MedLit automates evidence-based critical appraisal of scientific papers using established medical research frameworks. It is free to use (bring your own Anthropic Claude API key) and requires no account.
+
+## What MedLit does
+
+- Scores any medical or scientific paper across 8 dimensions using AI
+- Accepts PubMed, DOI (doi.org), Nature, NEJM, Lancet, BMJ, JAMA, bioRxiv, medRxiv, and most major journal URLs
+- Returns results in ~30–60 seconds using Claude (Sonnet or Opus) at temperature 0.2
+- Exports to plain text, Markdown, or BibTeX
+
+## Scoring dimensions
+
+| Dimension | Scale | Framework |
+|---|---|---|
+| Accuracy Score | 1–10 | Internal validity, CEBM, pre-registration |
+| Bias Risk Rating | 1–10 | Cochrane RoB 2, ROBINS-I, Newcastle-Ottawa Scale |
+| Methods Quality Score | 1–10 | CONSORT, STROBE, PRISMA, EQUATOR |
+| Reference Index Check | PASS / WARN / FAIL | Citation-claim mapping, self-citation rate |
+| Study Design | Level 1–5 | Oxford CEBM Levels of Evidence |
+| Conflict of Interest | FLAG / CLEAR / DECLARED | ICMJE standards |
+| Limitations | List | Enumerated from paper text |
+| Plain-Language Summary | 6-part | NLM Health Literacy Guidelines |
+
+## Standards and frameworks used
+
+- Oxford Centre for Evidence-Based Medicine (CEBM) Levels of Evidence
+- Cochrane Risk of Bias 2 (RoB 2) — for randomized trials
+- ROBINS-I — for non-randomized studies
+- Newcastle-Ottawa Scale — for observational studies
+- CONSORT 2010 — for randomized controlled trial reporting
+- STROBE — for observational study reporting
+- PRISMA 2020 — for systematic reviews and meta-analyses
+- EQUATOR Network reporting standards
+- ICMJE conflict-of-interest guidelines
+- NLM Health Literacy Guidelines
+
+## Who it is for
+
+- Medical students learning critical appraisal
+- Residents and clinicians reviewing evidence for clinical decisions
+- Researchers evaluating related literature
+- Academics teaching evidence-based medicine
+- Science journalists and policy analysts assessing study quality
+- Anyone who needs to quickly evaluate whether a paper is trustworthy
+
+## Key pages
+
+- [Home — analyze a paper](https://medlit.app/)
+- [How MedLit works (Methodology)](https://medlit.app/methodology)
+- [Frequently Asked Questions](https://medlit.app/faq)
+
+## Full documentation
+
+For a comprehensive, AI-readable description of MedLit including all Q&As, technical details, and use cases, see: https://medlit.app/llms-full.txt

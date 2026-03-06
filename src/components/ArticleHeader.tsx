@@ -89,11 +89,11 @@ const styles = StyleSheet.create({
   preprintBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F59E0B',
+    backgroundColor: Colors.warning,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    gap: 4,
+    paddingVertical: 5,
+    borderRadius: 8,
+    gap: 5,
     alignSelf: 'flex-start',
   },
   preprintText: {

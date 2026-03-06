@@ -1,27 +1,30 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   ScrollView,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Share,
+  Modal,
+  Pressable,
+  StyleSheet,
   Alert,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../src/constants/colors';
+import { useAuth } from '../src/hooks/useAuth';
 import { useSettings } from '../src/hooks/useSettings';
 import { useHistory } from '../src/hooks/useHistory';
-import { parseArticleUrl, hasValidIdentifier, formatIdentifierLabel } from '../src/services/urlParser';
-import { fetchArticle } from '../src/services/articleFetcher';
-import { analyzeArticle } from '../src/services/claudeAnalyzer';
+import { useAnalyzeArticle } from '../src/hooks/useAnalyzeArticle';
 import { LoadingState } from '../src/components/LoadingState';
-import type { FetchState, ArticleAnalysis } from '../src/types';
+import { homeScreenStyles as styles } from '../src/styles/homeScreenStyles';
 
 const EXAMPLE_URLS = [
   'https://pubmed.ncbi.nlm.nih.gov/38514723/',
@@ -29,115 +32,58 @@ const EXAMPLE_URLS = [
   'https://www.nejm.org/doi/full/10.1056/NEJMoa2300057',
 ];
 
-export default function HomeScreen() {
-  const { settings, loaded } = useSettings();
-  const { history, saveToHistory } = useHistory();
-  const [url, setUrl] = useState('');
-  const [fetchState, setFetchState] = useState<FetchState>({
-    status: 'idle',
-    message: '',
-    progress: 0,
-  });
-  const [currentAnalysis, setCurrentAnalysis] = useState<ArticleAnalysis | null>(null);
-  const analysisRef = useRef<ArticleAnalysis | null>(null);
+const FEATURE_PILLS = [
+  { icon: 'analytics-outline', label: 'Accuracy Score' },
+  { icon: 'eye-outline', label: 'Bias Detection' },
+  { icon: 'flask-outline', label: 'Methods Review' },
+  { icon: 'library-outline', label: 'Reference Check' },
+  { icon: 'ribbon-outline', label: 'COI Flagging' },
+  { icon: 'reader-outline', label: 'Plain Summary' },
+];
 
-  const updateState = useCallback((status: FetchState['status'], message: string, progress: number) => {
-    setFetchState({ status, message, progress });
+export default function HomeScreen() {
+  const params = useLocalSearchParams<{ url?: string }>();
+  const { user } = useAuth();
+  const uid = user?.uid ?? null;
+  const { settings, saveSettings } = useSettings(uid);
+  const { history, saveToHistory } = useHistory(uid);
+  const [url, setUrl] = useState('');
+  const [apiKeyModalVisible, setApiKeyModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (params.url) setUrl(params.url);
+  }, [params.url]);
+  const [tempApiKey, setTempApiKey] = useState('');
+  const [showTempKey, setShowTempKey] = useState(false);
+
+  const onApiKeyMissing = useCallback(() => {
+    setTempApiKey('');
+    setShowTempKey(false);
+    setApiKeyModalVisible(true);
   }, []);
 
-  const handleAnalyze = useCallback(async () => {
-    if (!url.trim()) {
-      Alert.alert('No URL', 'Please paste an article URL.');
+  const { handleAnalyze, fetchState, isLoading } = useAnalyzeArticle({
+    url,
+    settings,
+    saveToHistory,
+    onApiKeyMissing,
+  });
+
+  const handleSaveApiKey = useCallback(async () => {
+    const key = tempApiKey.trim();
+    if (!key) {
+      Alert.alert('No Key', 'Please enter your Claude API key.');
       return;
     }
-
-    if (!settings.claudeApiKey) {
-      Alert.alert(
-        'API Key Required',
-        'Please add your Claude API key in Settings before analyzing articles.',
-        [
-          { text: 'Go to Settings', onPress: () => router.push('/settings') },
-          { text: 'Cancel', style: 'cancel' },
-        ]
-      );
+    if (!key.startsWith('sk-ant-')) {
+      Alert.alert('Invalid Key', 'Claude API keys start with "sk-ant-". Please check your key.');
       return;
     }
-
-    setCurrentAnalysis(null);
-
-    try {
-      // Step 1: Parse URL
-      updateState('parsing_url', 'Parsing article URL...', 10);
-      const identifier = parseArticleUrl(url.trim());
-
-      if (!hasValidIdentifier(identifier)) {
-        // Try anyway with the raw URL
-        if (!url.startsWith('http')) {
-          Alert.alert(
-            'Could not parse URL',
-            'Could not extract a PubMed ID, DOI, or recognizable identifier from this URL. Please check the link.'
-          );
-          setFetchState({ status: 'idle', message: '', progress: 0 });
-          return;
-        }
-      }
-
-      // Step 2: Fetch article
-      updateState('fetching_article', `Fetching article data (${formatIdentifierLabel(identifier)})...`, 30);
-
-      const article = await fetchArticle(identifier, {
-        unpaywallEmail: settings.unpaywallEmail,
-        sciHubEnabled: settings.sciHubEnabled,
-        sciHubMirror: settings.sciHubMirror,
-        onProgress: (msg) => updateState('fetching_article', msg, 50),
-      });
-
-      // Step 3: Analyze
-      updateState('analyzing', 'Analyzing with Claude AI...', 65);
-
-      const analysis = await analyzeArticle(
-        article,
-        identifier,
-        settings.claudeApiKey,
-        settings.claudeModel,
-        (msg) => updateState('analyzing', msg, 80)
-      );
-
-      // Done
-      updateState('done', 'Analysis complete!', 100);
-      analysisRef.current = analysis;
-      setCurrentAnalysis(analysis);
-
-      // Save to history
-      if (settings.saveHistory) {
-        await saveToHistory(analysis);
-      }
-
-      // Navigate to results
-      setTimeout(() => {
-        router.push({
-          pathname: '/analysis',
-          params: { id: analysis.id },
-        });
-        setFetchState({ status: 'idle', message: '', progress: 0 });
-      }, 600);
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Unknown error';
-      setFetchState({
-        status: 'error',
-        message: msg,
-        progress: 0,
-        error: msg,
-      });
-    }
-  }, [url, settings, saveToHistory, updateState]);
-
-  const isLoading = fetchState.status !== 'idle' && fetchState.status !== 'error';
-
-  // Store analysis globally for the analysis screen
-  if (currentAnalysis) {
-    (global as { __medlit_analysis?: ArticleAnalysis }).__medlit_analysis = currentAnalysis;
-  }
+    await saveSettings({ claudeApiKey: key });
+    setApiKeyModalVisible(false);
+    // Auto-trigger analysis after saving key
+    setTimeout(() => handleAnalyze(), 300);
+  }, [tempApiKey, saveSettings, handleAnalyze]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -150,7 +96,6 @@ export default function HomeScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Hero header */}
           <LinearGradient colors={[Colors.primary, Colors.primaryLight]} style={styles.hero}>
             <View style={styles.logoRow}>
               <View style={styles.logoIcon}>
@@ -167,7 +112,6 @@ export default function HomeScreen() {
             </Text>
           </LinearGradient>
 
-          {/* Input card */}
           <View style={styles.inputCard}>
             <Text style={styles.inputLabel}>Article URL or DOI</Text>
             <View style={styles.inputRow}>
@@ -185,10 +129,7 @@ export default function HomeScreen() {
                 editable={!isLoading}
               />
               {url.length > 0 ? (
-                <TouchableOpacity
-                  onPress={() => setUrl('')}
-                  style={styles.clearBtn}
-                >
+                <TouchableOpacity onPress={() => setUrl('')} style={styles.clearBtn}>
                   <Ionicons name="close-circle" size={18} color={Colors.textTertiary} />
                 </TouchableOpacity>
               ) : null}
@@ -217,10 +158,8 @@ export default function HomeScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
-            {/* Loading state */}
             {isLoading ? <LoadingState state={fetchState} /> : null}
 
-            {/* Error */}
             {fetchState.status === 'error' ? (
               <View style={styles.errorBox}>
                 <Ionicons name="alert-circle" size={18} color={Colors.danger} />
@@ -229,7 +168,24 @@ export default function HomeScreen() {
             ) : null}
           </View>
 
-          {/* Example URLs */}
+          {!settings.claudeApiKey && !isLoading ? (
+            <TouchableOpacity
+              style={styles.apiKeyPrompt}
+              onPress={() => { setTempApiKey(''); setShowTempKey(false); setApiKeyModalVisible(true); }}
+            >
+              <View style={styles.apiKeyPromptIcon}>
+                <Ionicons name="key" size={18} color={Colors.warning} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.apiKeyPromptTitle}>API Key Needed</Text>
+                <Text style={styles.apiKeyPromptText}>
+                  Tap here to add your Claude API key and start analyzing
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={Colors.warning} />
+            </TouchableOpacity>
+          ) : null}
+
           {!isLoading ? (
             <View style={styles.examplesCard}>
               <Text style={styles.examplesTitle}>Try an example</Text>
@@ -246,17 +202,9 @@ export default function HomeScreen() {
             </View>
           ) : null}
 
-          {/* Quick feature pills */}
           {!isLoading ? (
             <View style={styles.features}>
-              {[
-                { icon: 'analytics-outline', label: 'Accuracy Score' },
-                { icon: 'eye-outline', label: 'Bias Detection' },
-                { icon: 'flask-outline', label: 'Methods Review' },
-                { icon: 'library-outline', label: 'Reference Check' },
-                { icon: 'ribbon-outline', label: 'COI Flagging' },
-                { icon: 'reader-outline', label: 'Plain Summary' },
-              ].map((f) => (
+              {FEATURE_PILLS.map((f) => (
                 <View key={f.label} style={styles.featurePill}>
                   <Ionicons name={f.icon as keyof typeof Ionicons.glyphMap} size={13} color={Colors.science} />
                   <Text style={styles.featureLabel}>{f.label}</Text>
@@ -265,7 +213,6 @@ export default function HomeScreen() {
             </View>
           ) : null}
 
-          {/* Recent history preview */}
           {history.length > 0 && !isLoading ? (
             <View style={styles.historyCard}>
               <View style={styles.historyHeader}>
@@ -275,7 +222,12 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
               {history.slice(0, 3).map((entry) => (
-                <View key={entry.id} style={styles.historyItem}>
+                <TouchableOpacity
+                  key={entry.id}
+                  style={styles.historyItem}
+                  onPress={() => setUrl(entry.url)}
+                  activeOpacity={0.7}
+                >
                   <View style={styles.historyItemLeft}>
                     <Text style={styles.historyItemTitle} numberOfLines={2}>
                       {entry.title}
@@ -290,27 +242,109 @@ export default function HomeScreen() {
                     </Text>
                     <Text style={styles.historyScoreLabel}>accuracy</Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           ) : null}
 
-          {/* Settings shortcut */}
-          {!settings.claudeApiKey && !isLoading ? (
-            <TouchableOpacity
-              style={styles.apiKeyPrompt}
-              onPress={() => router.push('/settings')}
-            >
-              <Ionicons name="key-outline" size={18} color={Colors.warning} />
-              <Text style={styles.apiKeyPromptText}>
-                Add your Claude API key to start analyzing
+          {!isLoading ? (
+            <View style={styles.seoBlock}>
+              <Text style={styles.seoTitle}>Free medical & scientific paper analyzer</Text>
+              <Text style={styles.seoText}>
+                MedLit is a critical appraisal tool for research papers. Paste a PubMed, DOI, Nature, NEJM, Lancet, or bioRxiv link and get an accuracy score (1–10), bias detection (Cochrane RoB 2, STROBE), methods review, conflict-of-interest flagging, and a plain-language summary. Built for evidence-based medicine (CEBM, PRISMA, CONSORT). No account required—add your API key in Settings to start.
               </Text>
-              <Ionicons name="chevron-forward" size={16} color={Colors.warning} />
-            </TouchableOpacity>
+              <View style={styles.seoActions}>
+                <TouchableOpacity style={styles.seoLinkBtn} onPress={() => router.push('/methodology')}>
+                  <Ionicons name="book-outline" size={16} color={Colors.accent} />
+                  <Text style={styles.seoLinkText}>How it works</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.seoLinkBtn} onPress={() => router.push('/faq')}>
+                  <Ionicons name="help-circle-outline" size={16} color={Colors.accent} />
+                  <Text style={styles.seoLinkText}>FAQ</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.shareMedlitBtn}
+                  onPress={async () => {
+                    const shareUrl = Linking.createURL('/');
+                    await Share.share({
+                      message: `Check out MedLit — free tool to analyze medical & scientific papers. Get accuracy scores, bias detection, and plain-English summaries. ${shareUrl}`,
+                      title: 'MedLit — Scientific Literature Analyzer',
+                    });
+                  }}
+                >
+                  <Ionicons name="share-outline" size={16} color={Colors.science} />
+                  <Text style={styles.shareMedlitText}>Share MedLit</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           ) : null}
+
         </ScrollView>
 
-        {/* Nav bar */}
+        {/* API Key Modal */}
+        <Modal
+          visible={apiKeyModalVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setApiKeyModalVisible(false)}
+        >
+          <Pressable style={modalStyles.overlay} onPress={() => setApiKeyModalVisible(false)}>
+            <Pressable style={modalStyles.sheet} onPress={(e) => e.stopPropagation()}>
+              <View style={modalStyles.handle} />
+              <View style={modalStyles.header}>
+                <View style={modalStyles.iconCircle}>
+                  <Ionicons name="key" size={24} color={Colors.accent} />
+                </View>
+                <Text style={modalStyles.title}>API Key Required</Text>
+                <Text style={modalStyles.subtitle}>
+                  Enter your Claude API key to start analyzing articles. Get one free at console.anthropic.com
+                </Text>
+              </View>
+
+              <View style={modalStyles.inputRow}>
+                <TextInput
+                  style={modalStyles.input}
+                  value={tempApiKey}
+                  onChangeText={setTempApiKey}
+                  placeholder="sk-ant-..."
+                  placeholderTextColor={Colors.textTertiary}
+                  secureTextEntry={!showTempKey}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoFocus
+                />
+                <TouchableOpacity onPress={() => setShowTempKey((v) => !v)} style={modalStyles.eyeBtn}>
+                  <Ionicons
+                    name={showTempKey ? 'eye-off-outline' : 'eye-outline'}
+                    size={18}
+                    color={Colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity style={modalStyles.saveBtn} onPress={handleSaveApiKey} activeOpacity={0.8}>
+                <LinearGradient
+                  colors={[Colors.accent, Colors.science]}
+                  style={modalStyles.saveBtnGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Ionicons name="checkmark-circle" size={18} color="#fff" />
+                  <Text style={modalStyles.saveBtnText}>Save & Analyze</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={modalStyles.settingsLink}
+                onPress={() => { setApiKeyModalVisible(false); router.push('/settings'); }}
+              >
+                <Ionicons name="settings-outline" size={14} color={Colors.textSecondary} />
+                <Text style={modalStyles.settingsLinkText}>Or configure in Settings</Text>
+              </TouchableOpacity>
+            </Pressable>
+          </Pressable>
+        </Modal>
+
         <View style={styles.navbar}>
           <TouchableOpacity style={styles.navItem} onPress={() => {}}>
             <Ionicons name="home" size={22} color={Colors.accent} />
@@ -324,270 +358,107 @@ export default function HomeScreen() {
             <Ionicons name="settings-outline" size={22} color={Colors.textSecondary} />
             <Text style={styles.navLabel}>Settings</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push(user ? '/settings' : '/auth')}>
+            <Ionicons name={user ? 'person' : 'person-outline'} size={22} color={user ? Colors.science : Colors.textSecondary} />
+            <Text style={[styles.navLabel, user && { color: Colors.science }]}>{user ? 'Account' : 'Sign in'}</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  flex: { flex: 1 },
-  scroll: { paddingBottom: 20 },
-
-  hero: {
-    padding: 20,
-    paddingTop: 28,
-    paddingBottom: 28,
-    gap: 12,
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
   },
-  logoRow: {
-    flexDirection: 'row',
+  sheet: {
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    backgroundColor: Colors.borderLight,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  header: {
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
+    marginBottom: 24,
   },
-  logoIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.accentLight,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 4,
   },
-  logoTitle: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#fff',
-    letterSpacing: -0.5,
-  },
-  logoSubtitle: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.7)',
-  },
-  heroTagline: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    lineHeight: 20,
-  },
-
-  inputCard: {
-    margin: 16,
-    backgroundColor: Colors.surface,
-    borderRadius: 18,
-    padding: 16,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  inputLabel: {
-    fontSize: 13,
+  title: {
+    fontSize: 20,
     fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  subtitle: {
+    fontSize: 14,
     color: Colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.background,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1.5,
     borderColor: Colors.border,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
+    marginBottom: 16,
   },
   input: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: 15,
     color: Colors.textPrimary,
   },
-  clearBtn: {
-    padding: 4,
+  eyeBtn: {
+    padding: 8,
   },
-  analyzeBtn: {
-    borderRadius: 12,
+  saveBtn: {
+    borderRadius: 14,
     overflow: 'hidden',
+    marginBottom: 12,
   },
-  analyzeBtnDisabled: {
-    opacity: 0.7,
-  },
-  analyzeBtnGradient: {
+  saveBtnGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
+    paddingVertical: 15,
   },
-  analyzeBtnText: {
+  saveBtnText: {
     fontSize: 16,
     fontWeight: '700',
     color: '#fff',
   },
-
-  errorBox: {
+  settingsLink: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    backgroundColor: Colors.dangerLight,
-    padding: 12,
-    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
   },
-  errorText: {
-    flex: 1,
+  settingsLinkText: {
     fontSize: 13,
-    color: Colors.danger,
-    lineHeight: 18,
-  },
-
-  examplesCard: {
-    marginHorizontal: 16,
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    padding: 14,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  examplesTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-    marginBottom: 4,
-  },
-  exampleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 4,
-  },
-  exampleUrl: {
-    flex: 1,
-    fontSize: 12,
-    color: Colors.accent,
-    textDecorationLine: 'underline',
-  },
-
-  features: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    paddingHorizontal: 16,
-    marginTop: 14,
-  },
-  featurePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: Colors.scienceLight,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
-  featureLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.science,
-  },
-
-  historyCard: {
-    marginHorizontal: 16,
-    marginTop: 14,
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    padding: 14,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  historyHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  historyTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  historyViewAll: {
-    fontSize: 13,
-    color: Colors.accent,
-    fontWeight: '600',
-  },
-  historyItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 6,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-  },
-  historyItemLeft: {
-    flex: 1,
-    gap: 2,
-  },
-  historyItemTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-    lineHeight: 18,
-  },
-  historyItemMeta: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  historyItemScores: {
-    alignItems: 'center',
-  },
-  historyScore: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  historyScoreLabel: {
-    fontSize: 10,
-    color: Colors.textTertiary,
-  },
-
-  apiKeyPrompt: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginHorizontal: 16,
-    marginTop: 14,
-    backgroundColor: Colors.warningLight,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.warning,
-  },
-  apiKeyPromptText: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.warning,
-  },
-
-  navbar: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingBottom: Platform.OS === 'ios' ? 0 : 8,
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    gap: 2,
-  },
-  navLabel: {
-    fontSize: 10,
-    fontWeight: '600',
     color: Colors.textSecondary,
   },
 });
