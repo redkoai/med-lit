@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -80,6 +80,16 @@ export default function HomeScreen() {
     onApiKeyMissing,
   });
 
+  // Track whether we need to auto-analyze after saving a key
+  const pendingAnalysis = useRef(false);
+
+  useEffect(() => {
+    if (pendingAnalysis.current && getActiveApiKey(settings)) {
+      pendingAnalysis.current = false;
+      handleAnalyze();
+    }
+  }, [settings, handleAnalyze]);
+
   const handleSaveApiKey = useCallback(async () => {
     const key = tempApiKey.trim();
     if (!key) {
@@ -87,11 +97,10 @@ export default function HomeScreen() {
       return;
     }
     const { settingsKey } = PROVIDER_INFO[settings.aiProvider];
+    pendingAnalysis.current = true;
     await saveSettings({ [settingsKey]: key });
     setApiKeyModalVisible(false);
-    // Auto-trigger analysis after saving key
-    setTimeout(() => handleAnalyze(), 300);
-  }, [tempApiKey, saveSettings, handleAnalyze, settings.aiProvider]);
+  }, [tempApiKey, saveSettings, settings.aiProvider]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -309,6 +318,24 @@ export default function HomeScreen() {
                 </Text>
               </View>
 
+              <View style={modalStyles.providerRow}>
+                {(['claude', 'openai', 'gemini'] as AIProvider[]).map((p) => {
+                  const active = settings.aiProvider === p;
+                  return (
+                    <TouchableOpacity
+                      key={p}
+                      style={[modalStyles.providerChip, active && modalStyles.providerChipActive]}
+                      onPress={() => { saveSettings({ aiProvider: p }); setTempApiKey(''); }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[modalStyles.providerChipText, active && modalStyles.providerChipTextActive]}>
+                        {PROVIDER_INFO[p].label.split(' ')[0]}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
               <View style={modalStyles.inputRow}>
                 <TextInput
                   style={modalStyles.input}
@@ -320,6 +347,8 @@ export default function HomeScreen() {
                   autoCapitalize="none"
                   autoCorrect={false}
                   autoFocus
+                  returnKeyType="go"
+                  onSubmitEditing={handleSaveApiKey}
                 />
                 <TouchableOpacity onPress={() => setShowTempKey((v) => !v)} style={modalStyles.eyeBtn}>
                   <Ionicons
@@ -468,5 +497,31 @@ const modalStyles = StyleSheet.create({
   settingsLinkText: {
     fontSize: 13,
     color: Colors.textSecondary,
+  },
+  providerRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  providerChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  providerChipActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  providerChipText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+  },
+  providerChipTextActive: {
+    color: '#fff',
   },
 });

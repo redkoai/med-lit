@@ -62,6 +62,14 @@ export default function RootLayout() {
             headerStyle: { backgroundColor: Colors.primary },
           }}
         />
+        <Stack.Screen
+          name="faq"
+          options={{
+            title: 'FAQ',
+            presentation: 'modal',
+            headerStyle: { backgroundColor: Colors.primary },
+          }}
+        />
       </Stack>
     </AuthProvider>
   );
