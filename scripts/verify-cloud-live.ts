@@ -36,7 +36,6 @@ try {
   analysis.article.title = 'Synthetic cloud QA: fictional critical appraisal';
   await check('owner profile create and read', async () => { await setDoc(doc(a.db, path), { email: a.email, displayName: 'Synthetic QA', totalAnalyses: 1 }); assert.equal((await getDocFromServer(doc(a.db, path))).data()?.email, a.email); });
   await check('owner analysis create and read', async () => { await setDoc(doc(a.db, `${path}/analyses/${analysis.id}`), analysis); assert.equal((await getDocFromServer(doc(a.db, `${path}/analyses/${analysis.id}`))).data()?.notes, analysis.notes); });
-  await check('descending bounded library query', async () => { const rows = await getDocs(query(collection(a.db, `${path}/analyses`), orderBy('analyzedAt', 'desc'), limit(100))); assert.equal(rows.size, 1); });
   await check('owner analysis update', async () => { await setDoc(doc(a.db, `${path}/analyses/${analysis.id}`), { collection: 'QA verification' }, { merge: true }); assert.equal((await getDocFromServer(doc(a.db, `${path}/analyses/${analysis.id}`))).data()?.collection, 'QA verification'); });
   await check('owner preferences', async () => { await setDoc(doc(a.db, `${path}/settings/prefs`), { aiProvider: 'openai', saveHistory: true }); });
   await check('provider secret field rejected in preferences', () => denied(() => setDoc(doc(a.db, `${path}/settings/prefs`), { apiKey: 'synthetic-not-a-key' }, { merge: true })));
@@ -49,6 +48,19 @@ try {
   await check('other account library list denied', () => denied(() => getDocs(collection(b.db, `${path}/analyses`))));
   await check('anonymous analysis read denied', () => denied(() => getDocFromServer(doc(getFirestore(anonymousApp), `${path}/analyses/${analysis.id}`))));
   await check('global users list denied', () => denied(() => getDocs(collection(a.db, 'users'))));
+  await check('descending bounded library query', async () => {
+    // A freshly created Firestore index may take several minutes to become ready.
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const rows = await getDocs(query(collection(a.db, `${path}/analyses`), orderBy('analyzedAt', 'desc'), limit(100)));
+        assert.equal(rows.size, 1); break;
+      } catch (error: any) {
+        if (error.code !== 'failed-precondition' || attempt >= 10) throw error;
+        if (attempt === 0) console.log('Waiting for the new library index to finish building.');
+        await new Promise(resolve => setTimeout(resolve, 30_000));
+      }
+    }
+  });
   await check('owner analysis delete and absence', async () => { await deleteDoc(doc(a.db, `${path}/analyses/${analysis.id}`)); assert.equal((await getDocFromServer(doc(a.db, `${path}/analyses/${analysis.id}`))).exists(), false); });
   if (process.env.MEDLIT_QA_KEEP_FILE) {
     await setDoc(doc(a.db, `${path}/analyses/${analysis.id}`), analysis);

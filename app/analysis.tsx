@@ -25,6 +25,8 @@ export default function AnalysisScreen() {
   const [collectionName, setCollectionName] = useState('');
   const [tagText, setTagText] = useState('');
   const [notes, setNotes] = useState('');
+  const [savingLibrary, setSavingLibrary] = useState(false);
+  const [libraryError, setLibraryError] = useState('');
   const [exportStatus, setExportStatus] = useState('');
   const deliverText = async (message: string, filename?: string) => {
     try { setExportStatus(await shareText(message, filename)); }
@@ -246,19 +248,29 @@ export default function AnalysisScreen() {
             />
             <TouchableOpacity
               accessibilityRole="button"
+              accessibilityState={{ busy: savingLibrary, disabled: savingLibrary }}
+              disabled={savingLibrary}
               style={styles.editorSaveBtn}
               onPress={async () => {
-                const updated = await updateAnalysisMetadata(analysis.id, {
-                  collection: collectionName.trim() || undefined,
-                  tags: tagText.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 20),
-                  notes: notes.trim() || undefined,
-                });
-                if (updated) setAnalysis(updated);
-                setLibraryMenuVisible(false);
+                if (savingLibrary) return;
+                setSavingLibrary(true); setLibraryError('');
+                try {
+                  const updated = await updateAnalysisMetadata(analysis.id, {
+                    collection: collectionName.trim() || undefined,
+                    tags: tagText.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 20),
+                    notes: notes.trim() || undefined,
+                  });
+                  if (!updated) throw new Error('Appraisal unavailable');
+                  setAnalysis(updated);
+                  setLibraryMenuVisible(false);
+                } catch {
+                  setLibraryError('Saving could not finish. Your edits are still here. Check your connection and try again.');
+                } finally { setSavingLibrary(false); }
               }}
             >
-              <Text style={styles.backBtnText}>Save to library</Text>
+              <Text style={styles.backBtnText}>{savingLibrary ? 'Saving…' : 'Save to library'}</Text>
             </TouchableOpacity>
+            {libraryError ? <Text accessibilityRole="alert" style={styles.errorBody}>{libraryError}</Text> : null}
           </Pressable>
         </Pressable>
       </Modal>
