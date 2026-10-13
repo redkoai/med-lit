@@ -71,7 +71,9 @@ Implemented foundations: static HTML, descriptive titles, canonical URLs, public
 
 ## Measurement and hosting boundaries
 
-The current first-party collector supports broad appraisal flow events; it does not establish a complete organic-landing-to-appraisal attribution funnel. Add only coarse, allowlisted guide identifiers if that funnel is needed. Do not collect API keys, article text, paper URLs, query strings, notes or health information for acquisition analytics. Search Console access, actual query demand and conversion baselines still need verification.
+The current first-party collector supports broad appraisal flow events; it does not establish a complete organic-landing-to-appraisal attribution funnel. Add only coarse, allowlisted guide identifiers if that funnel is needed. Do not collect API keys, article text, paper URLs, query strings, notes or health information for acquisition analytics. Actual query demand and conversion baselines still need measurement.
+
+On October 13, Redko Team ownership of the canonical Vercel URL-prefix property was verified in Search Console using the HTML tag. Google confirmed sitemap submission. The initial sitemap report showed "Couldn't fetch"; a subsequent Google live URL test confirmed the sitemap is available to Google. The public endpoint returns HTTP 200, application/xml and 14 valid URL entries, including all six guides. Sitemap processing and indexing remain unconfirmed; submission is not traffic or ranking evidence.
 
 Keep the existing Vercel origin canonical until a chosen Redko domain is connected and verified. Vercel can continue hosting an app at a custom domain while retaining its Vercel URL. A later canonical change needs a deliberate redirect/canonical plan; do not publish duplicate competing copies or move Wix/DNS as part of this design change.
 
