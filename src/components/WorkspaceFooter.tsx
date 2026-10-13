@@ -9,7 +9,7 @@ export function WorkspaceFooter() {
       <View style={s.links}>
         {[
           ["Research guides", "/guides"],
-          ["Our mission", "/about"],
+          ["About Redko", "/about#redko"],
           ["FAQ", "/faq"],
           ["Privacy", "/privacy"],
           ["Terms", "/terms"],

@@ -1,0 +1,41 @@
+{
+  "updated": "2026-10-13",
+  "projects": [
+    {
+      "id": "redko",
+      "name": "Redko",
+      "url": "https://www.theredko.com/products",
+      "description": "Product design, software development and AI services."
+    },
+    {
+      "id": "labs",
+      "name": "Redko Labs",
+      "url": "https://redko-website-preview.vercel.app/RedkoLabs",
+      "description": "An incubator for founders working in impact AI and deep tech."
+    },
+    {
+      "id": "medlit",
+      "name": "MedLit",
+      "url": "https://medlit-evidence-appraisal.vercel.app/about",
+      "description": "Read research critically and inspect the evidence behind an appraisal."
+    },
+    {
+      "id": "synaptik",
+      "name": "Synaptik",
+      "url": "https://synaptik-beta.vercel.app/about",
+      "description": "Research-informed cognitive practice and everyday wellbeing activities."
+    },
+    {
+      "id": "gameer",
+      "name": "Gameer",
+      "url": "https://www.gameer.io/about",
+      "description": "Play, create and share games with AI tools."
+    },
+    {
+      "id": "redvest",
+      "name": "Redvest",
+      "url": "https://www.redvest.app/about",
+      "description": "Financial education and investing tools."
+    }
+  ]
+}

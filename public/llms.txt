@@ -29,3 +29,16 @@ Public documentation: `/methodology`, `/faq`, `/privacy`, and `/terms`.
 ## Additional reading guides
 - [How to critically appraise a randomized controlled trial](https://medlit-evidence-appraisal.vercel.app/guides/randomized-trial-critical-appraisal): A reading guide for medical students and journal clubs: examine a trial’s question, allocation, missing data, outcome reporting and applicability.
 - [Can you critically appraise a paper from its abstract?](https://medlit-evidence-appraisal.vercel.app/guides/abstract-vs-full-text): Understand what an abstract-only AI paper review can support, what it leaves unanswered, and when you need the full text.
+
+## Related products and initiatives
+
+These are distinct products and initiatives connected through Redko and founder Anya Ozmen. Product accounts and privacy choices are separate.
+
+- [Redko](https://www.theredko.com/products): Product design, software development and AI services.
+- [Redko Labs](https://redko-website-preview.vercel.app/RedkoLabs): An incubator for founders working in impact AI and deep tech.
+- [MedLit](https://medlit-evidence-appraisal.vercel.app/about): Read research critically and inspect the evidence behind an appraisal.
+- [Synaptik](https://synaptik-beta.vercel.app/about): Research-informed cognitive practice and everyday wellbeing activities.
+- [Gameer](https://www.gameer.io/about): Play, create and share games with AI tools.
+- [Redvest](https://www.redvest.app/about): Financial education and investing tools.
+
+Redko Labs currently uses its public Vercel address while the Redko domain migration is in progress.

@@ -10,12 +10,14 @@ export function GuidePage({
   description,
   path,
   active,
+  structuredData,
   children,
 }: {
   title: string;
   description: string;
   path: string;
   active?: string;
+  structuredData?: Record<string, unknown>;
   children: ReactNode;
 }) {
   return (
@@ -27,7 +29,7 @@ export function GuidePage({
         title={`${title} — MedLit`}
         description={description}
         path={path}
-        structuredData={path.startsWith('/guides') ? {'@context':'https://schema.org','@type':path==='/guides'?'CollectionPage':'Article',headline:title,description,url:PUBLIC_SITE_URL+path,dateModified:'2026-10-13',author:{'@type':'Organization',name:'MedLit'},publisher:{'@type':'Organization',name:'MedLit'}} : undefined}
+        structuredData={structuredData ?? (path.startsWith('/guides') ? {'@context':'https://schema.org','@type':path==='/guides'?'CollectionPage':'Article',headline:title,description,url:PUBLIC_SITE_URL+path,dateModified:'2026-10-13',author:{'@type':'Organization',name:'MedLit'},publisher:{'@type':'Organization',name:'MedLit'}} : undefined)}
       />
       <WorkspaceHeader active={active} />
       <View nativeID="main-content" style={guide.content} role={"main" as never}>

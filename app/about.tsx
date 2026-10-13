@@ -5,6 +5,8 @@ import { GuidePage, guide as g } from "../src/components/GuidePage";
 import { MotionPress } from "../src/components/WorkspaceMotion";
 import { Colors as C } from "../src/constants/colors";
 
+import { REDKO_NETWORK, redkoDirectorySchema } from "../src/constants/redkoNetwork";
+
 export default function AboutScreen() {
   return (
     <GuidePage
@@ -12,6 +14,7 @@ export default function AboutScreen() {
       description="Our mission is to help people understand how research earns its conclusions—and where the evidence leaves room for doubt."
       path="/about"
       active="about"
+      structuredData={{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"AboutPage",name:"About MedLit and Redko",url:"https://medlit-evidence-appraisal.vercel.app/about"},redkoDirectorySchema("https://medlit-evidence-appraisal.vercel.app/about#redko")]}}
     >
       <View style={s.statement}>
         <Ionicons name="compass-outline" size={38} color={C.accent} />
@@ -73,13 +76,14 @@ export default function AboutScreen() {
           <Text style={g.linkText}>Read the methodology</Text>
         </MotionPress>
       </View>
-      <View style={s.principle}>
-        <Text role="heading" aria-level={2} style={g.heading}>Other work from the founder</Text>
-        <Text style={g.body}>Anya Ozmen also builds tools for cognitive practice, creative work, and financial education.</Text>
-        <Link href="https://synaptik-beta.vercel.app/science?utm_source=medlit&utm_medium=referral&utm_campaign=founder_projects" style={g.linkText}>Synaptik: research-informed cognitive practice</Link>
-        <Link href="https://www.gameer.io/about?utm_source=medlit&utm_medium=referral&utm_campaign=founder_projects" style={g.linkText}>Gameer: games and creative tools</Link>
-        <Link href="https://www.redvest.app/about?utm_source=medlit&utm_medium=referral&utm_campaign=founder_projects" style={g.linkText}>Redvest: financial education</Link>
-        <Link href="https://www.theredko.com/?utm_source=medlit&utm_medium=referral&utm_campaign=founder_projects" style={g.linkText}>Redko: product and AI studio</Link>
+      <View nativeID="redko" style={s.principle}>
+        <Text role="heading" aria-level={2} style={g.heading}>About Redko</Text>
+        <Text style={g.body}>MedLit is part of the products and initiatives built by Redko and founder Anya Ozmen. Explore the work that fits what you want to do next.</Text>
+        {REDKO_NETWORK.filter(project => project.id !== 'medlit').map(project => <View key={project.id} style={{gap:6}}>
+          <Link href={project.url} style={g.linkText}>{project.name}</Link>
+          <Text style={g.body}>{project.description}</Text>
+        </View>)}
+        <Text style={g.body}>Each product has its own account and privacy choices. Following a link does not share your MedLit library or API keys.</Text>
       </View>
       <View style={s.actions}>
         <MotionPress
