@@ -28,6 +28,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
+        <meta name="google-site-verification" content="bnEQ0by_bVkODQ5muLyvVK5inRT5CJ0b8drhpOSqMR0" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta property="og:type" content="website" />
