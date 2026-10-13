@@ -1,14 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, getSeverityColor, getScoreColor } from '../constants/colors';
+import { Colors, getSeverityColor } from '../constants/colors';
 import { SectionCard } from './SectionCard';
 import { BulletList } from './BulletList';
-import { ScoreCircle } from './ScoreCircle';
-import type { BiasScore, BiasSeverity } from '../types';
+import type { RiskOfBiasAssessment, BiasSeverity } from '../types';
 
 interface Props {
-  biasScore: BiasScore;
+  riskOfBias: RiskOfBiasAssessment;
 }
 
 function SeverityBadge({ severity }: { severity: BiasSeverity }) {
@@ -28,48 +27,41 @@ function SeverityBadge({ severity }: { severity: BiasSeverity }) {
   );
 }
 
-export function BiasSection({ biasScore }: Props) {
-  const badgeColor = getScoreColor(biasScore.score);
+export function BiasSection({ riskOfBias }: Props) {
   const riskColors: Record<string, string> = {
     low: Colors.success,
-    moderate: Colors.warning,
+    some_concerns: Colors.warning,
     high: Colors.danger,
-    critical: '#7F1D1D',
+    unclear: Colors.textSecondary,
   };
-  const riskColor = riskColors[biasScore.overallRisk] || Colors.textSecondary;
+  const riskColor = riskColors[riskOfBias.overallRisk] || Colors.textSecondary;
 
   return (
     <SectionCard
       title="Bias Assessment"
       icon="eye-outline"
       iconColor={Colors.warning}
-      badge={`${biasScore.score}/10`}
-      badgeColor={badgeColor}
+      badge={riskOfBias.overallRisk.replace('_', ' ').toUpperCase()}
+      badgeColor={riskColor}
     >
       {/* Score + overall risk */}
       <View style={styles.topRow}>
-        <ScoreCircle
-          score={biasScore.score}
-          label="Bias-Free"
-          subtitle="10 = least biased"
-          size="medium"
-        />
         <View style={styles.riskBlock}>
           <Text style={styles.riskLabel}>Overall Risk</Text>
           <View style={[styles.riskPill, { backgroundColor: riskColor }]}>
             <Text style={styles.riskPillText}>
-              {biasScore.overallRisk.toUpperCase()}
+              {riskOfBias.overallRisk.replace('_', ' ').toUpperCase()}
             </Text>
           </View>
-          <Text style={styles.reasoning}>{biasScore.overallReasoning}</Text>
+          <Text style={styles.reasoning}>{riskOfBias.overallReasoning}</Text>
         </View>
       </View>
 
       {/* Biases found */}
-      {biasScore.biasesFound.length > 0 ? (
+      {riskOfBias.biasesFound.length > 0 ? (
         <View style={styles.block}>
-          <Text style={styles.blockTitle}>Biases Detected</Text>
-          {biasScore.biasesFound.map((bias, i) => (
+          <Text style={styles.blockTitle}>Bias concerns to review</Text>
+          {riskOfBias.biasesFound.map((bias, i) => (
             <View key={i} style={styles.biasItem}>
               <View style={styles.biasHeader}>
                 <Ionicons
@@ -86,17 +78,17 @@ export function BiasSection({ biasScore }: Props) {
         </View>
       ) : (
         <View style={styles.cleanBill}>
-          <Ionicons name="shield-checkmark" size={20} color={Colors.success} />
-          <Text style={styles.cleanBillText}>No significant biases detected</Text>
+          <Ionicons name={riskOfBias.overallRisk === 'unclear' ? 'help-circle-outline' : 'shield-checkmark'} size={20} color={Colors.textSecondary} />
+          <Text style={[styles.cleanBillText, { color: Colors.textSecondary }]}>{riskOfBias.overallRisk === 'unclear' ? 'Insufficient evidence to resolve all domains. This is not a low-risk finding.' : 'No concern identified in the assessable domains. This is not proof of absence of bias.'}</Text>
         </View>
       )}
 
       {/* Positive practices */}
-      {biasScore.positivePractices.length > 0 ? (
+      {riskOfBias.positivePractices.length > 0 ? (
         <View style={styles.block}>
           <Text style={styles.blockTitle}>Bias-Reduction Practices</Text>
           <BulletList
-            items={biasScore.positivePractices}
+            items={riskOfBias.positivePractices}
             color={Colors.success}
             icon="✓"
           />

@@ -4,30 +4,28 @@
     "slug": "med-lit",
     "owner": "redko",
     "version": "1.0.0",
-    "description": "Analyze any medical or scientific paper in seconds. Paste a PubMed, DOI, or journal link—get accuracy scores, bias detection, and plain-English summaries. Free for researchers, clinicians, and students.",
+    "description": "Evidence-linked, AI-assisted critical appraisal of biomedical literature. MedLit surfaces study-design questions, source coverage, limitations, and supporting passages without replacing peer review or clinical judgment.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0F2E4E"
+      "backgroundColor": "#F0EDFF"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.redko.medlit",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true
-        }
-      }
+        "CFBundleAllowMixedLocalizations": true
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0F2E4E"
+        "backgroundColor": "#F0EDFF"
       },
       "package": "com.redko.medlit",
       "permissions": [
@@ -38,16 +36,18 @@
       "bundler": "metro",
       "favicon": "./assets/favicon.png",
       "output": "static",
-      "name": "MedLit — Scientific Literature Analyzer",
+      "name": "MedLit — Evidence Appraisal Workspace",
       "shortName": "MedLit",
-      "description": "Free medical & scientific paper analyzer. PubMed, DOI, Nature, NEJM. Accuracy scores, bias detection, plain-language summaries.",
-      "themeColor": "#0F2E4E",
+      "description": "Evidence-linked, AI-assisted critical appraisal for biomedical literature.",
+      "themeColor": "#5145CD",
       "lang": "en"
     },
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-dev-client"
+      "expo-secure-store",
+      "expo-apple-authentication",
+      "./plugins/withGoogleModularHeaders.cjs"
     ],
     "experiments": {
       "typedRoutes": true

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="MedLit evidence appraisal workspace">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0f2e4e"/><stop offset="1" stop-color="#1a4470"/></linearGradient></defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <rect x="92" y="105" width="112" height="112" rx="28" fill="#ffffff" fill-opacity=".14"/>
+  <!-- brand:start -->
+<svg x="92" y="105" width="112" height="112" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <title>MedLit folded-page M mark</title>
+  <g fill="#FFFFFF">
+    <path d="M32.8 26C27.9 23.3 22 26.8 22 32.5V90C22 95 24.4 98 29 99.8L39.5 104.3C40.7 104.8 41.5 104.1 41.5 102.8V68L60 82.8V45.8C60 43 59 41.8 56.5 40.4L32.8 26Z"/>
+    <path d="M68 45.8C68 43.6 69 42.1 71 41L96.4 26C97.1 25.6 97.7 25.7 98.3 26.3L105.3 33.8C105.8 34.3 106 34.9 106 35.5V90C106 95 103.6 98 99 99.8L88.5 104.3C87.3 104.8 86.5 104.1 86.5 102.8V68L68 82.8V45.8Z"/>
+  </g>
+</svg>
+  <!-- brand:end -->
+  <text x="245" y="190" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="82" font-weight="700">MedLit</text>
+  <text x="96" y="330" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="50" font-weight="700">Evidence-linked literature appraisal</text>
+  <text x="98" y="407" fill="#dbeafe" font-family="Arial, Helvetica, sans-serif" font-size="29">Visible source coverage. Matched passages. Explicit uncertainty.</text>
+  <text x="98" y="510" fill="#99f6e4" font-family="Arial, Helvetica, sans-serif" font-size="24">Critical-reading support — not a substitute for peer review or clinical judgment.</text>
+</svg>

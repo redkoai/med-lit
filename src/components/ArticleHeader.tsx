@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, getCEBMColor } from '../constants/colors';
+import { Colors } from '../constants/colors';
 import type { ArticleAnalysis } from '../types';
 
 interface Props {
@@ -10,14 +9,10 @@ interface Props {
 }
 
 export function ArticleHeader({ analysis }: Props) {
-  const { article, studyDesign, identifier } = analysis;
-  const cebmColor = getCEBMColor(studyDesign.cebtLevel);
+  const { article, studyDesign } = analysis;
 
   return (
-    <LinearGradient
-      colors={[Colors.primary, Colors.primaryLight]}
-      style={styles.gradient}
-    >
+    <View style={styles.gradient}>
       {/* Preprint warning */}
       {article.isPreprint ? (
         <View style={styles.preprintBanner}>
@@ -27,7 +22,7 @@ export function ArticleHeader({ analysis }: Props) {
       ) : null}
 
       {/* Title */}
-      <Text style={styles.title} numberOfLines={4}>{article.title}</Text>
+      <Text role="heading" aria-level={1} style={styles.title}>{article.title}</Text>
 
       {/* Authors */}
       {article.authors.length > 0 ? (
@@ -47,44 +42,47 @@ export function ArticleHeader({ analysis }: Props) {
       {/* Badges row */}
       <View style={styles.badgeRow}>
         {/* Study design */}
-        <View style={[styles.badge, { backgroundColor: cebmColor }]}>
+        <View style={[styles.badge, { backgroundColor: Colors.accent }]}>
           <Text style={styles.badgeText}>{studyDesign.type}</Text>
         </View>
 
-        {/* CEBM Level */}
-        <View style={[styles.badge, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
-          <Text style={styles.badgeText}>CEBM Level {studyDesign.cebtLevel}</Text>
+        {/* Appraisal framework */}
+        <View style={[styles.badge, { backgroundColor: Colors.primaryMuted }]}>
+          <Text style={[styles.badgeText, { color: Colors.primary }]}>{studyDesign.appraisalFramework}</Text>
         </View>
 
         {/* Pre-registered */}
-        {studyDesign.isPreregistered ? (
+        {studyDesign.isPreregistered === 'yes' ? (
           <View style={[styles.badge, { backgroundColor: Colors.success }]}>
             <Ionicons name="checkmark-circle" size={10} color="#fff" />
-            <Text style={styles.badgeText}> Pre-registered</Text>
+            <Text style={styles.badgeText}> Registration reported · verify</Text>
           </View>
         ) : null}
 
         {/* Data source */}
-        <View style={[styles.badge, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+        <View style={[styles.badge, { backgroundColor: Colors.primaryMuted }]}>
           <Ionicons
             name={article.fetchSource === 'full_text' ? 'document-text' : 'document'}
             size={10}
-            color="rgba(255,255,255,0.8)"
+            color={Colors.textSecondary}
           />
           <Text style={styles.badgeTextMuted}>
-            {' '}{article.fetchSource === 'full_text' ? 'Full text' : 'Abstract only'}
+            {' '}{analysis.analysisModel === 'example/hand-authored' ? 'Fictional excerpt' : article.fetchSource === 'full_text' ? 'Full text' : article.fetchSource === 'abstract_only' ? 'Abstract only' : 'Metadata only'}
           </Text>
         </View>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   gradient: {
-    padding: 20,
-    paddingTop: 16,
-    gap: 8,
+    padding: 24,
+    paddingTop: 28,
+    gap: 12,
+    width: '100%',
+    maxWidth: 1020,
+    alignSelf: 'center',
   },
   preprintBanner: {
     flexDirection: 'row',
@@ -102,19 +100,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   title: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#fff',
-    lineHeight: 24,
+    fontSize: 26,
+    fontWeight: '600',
+    color: Colors.primary,
+    lineHeight: 35,
   },
   authors: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.75)',
+    color: Colors.textSecondary,
     lineHeight: 18,
   },
   meta: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
+    color: Colors.textSecondary,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -135,7 +133,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   badgeTextMuted: {
-    color: 'rgba(255,255,255,0.8)',
+    color: Colors.textSecondary,
     fontSize: 11,
     fontWeight: '500',
   },

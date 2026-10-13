@@ -1,0 +1,10 @@
+Lee artículos biomédicos con una visión más clara de la evidencia. MedLit ayuda a examinar el diseño, los pasajes de apoyo, la calidad del informe y la incertidumbre.
+
+Abre artículos por DOI, enlace de PubMed o URL compatible.
+Examina preguntas vinculadas a pasajes de apoyo.
+Guarda una biblioteca en tu dispositivo y exporta tu trabajo.
+Consulta la metodología y los límites de las fuentes.
+
+La IA puede equivocarse. Verifica las citas y conclusiones en el artículo original. MedLit no sustituye la revisión por pares, la experiencia profesional ni el juicio clínico. El análisis usa tu conexión a un proveedor compatible; su uso puede tener costes adicionales.
+
+La interfaz de la aplicación está disponible actualmente en inglés.

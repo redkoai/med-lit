@@ -1,179 +1,112 @@
-import type { ArticleAnalysis } from '../types';
+import type { ArticleAnalysis, AssessmentAnswer } from '../types';
 
-/** Single responsibility: plain-text report generation only. */
+const answerLabel = (value: AssessmentAnswer) => value.replace('_', ' ').toUpperCase();
+
+/** Generate a plain-text version of the evidence-linked appraisal. */
 export function generateTextReport(analysis: ArticleAnalysis): string {
-  const lines: string[] = [];
+  const { article, appraisal } = analysis;
+  const coverage = appraisal.sourceCoverage;
+  const evidenceById = new Map(appraisal.evidence.map((item) => [item.id, item]));
+  const lines: string[] = [
+    'MEDLIT EVIDENCE APPRAISAL REPORT',
+    'AI-assisted decision support; not peer review or medical advice.',
+    '',
+    'ARTICLE',
+    `Title: ${article.title}`,
+    `Authors: ${article.authors.join(', ') || 'Not reported'}`,
+    `Journal: ${article.journal || 'Not reported'}`,
+    `Year: ${article.year ?? 'Not reported'}`,
+  ];
+  if (article.doi) lines.push(`DOI: ${article.doi}`);
+  if (article.pmid) lines.push(`PMID: ${article.pmid}`);
+  lines.push(`Analyzed: ${new Date(analysis.analyzedAt).toISOString()}`);
+  lines.push(`Revision: ${analysis.revision}; analysis contract: ${analysis.analysisVersion}`);
 
-  lines.push('═══════════════════════════════════════════════════════');
-  lines.push('MedLit — Critical Appraisal Report');
-  lines.push('═══════════════════════════════════════════════════════\n');
+  lines.push('', 'SOURCE COVERAGE');
+  lines.push(`Coverage: ${coverage.level.replace('_', ' ')}`);
+  lines.push(`Text analyzed: ${coverage.analyzedCharacters} of ${coverage.availableCharacters} characters${coverage.wasTruncated ? ' (truncated)' : ''}`);
+  lines.push(`Available sections: ${coverage.availableSections.join(', ') || 'Not identified'}`);
+  lines.push(`Missing/unidentified sections: ${coverage.missingSections.join(', ') || 'None identified'}`);
+  lines.push(`References: ${coverage.referenceCount}; identifiers: ${coverage.referencesWithIdentifiers}; resolved: ${coverage.referencesResolved}`);
+  if (coverage.pdfPages) lines.push(`PDF pages extracted: ${coverage.pdfPages}`);
+  if (typeof coverage.extractedTableCount === 'number') lines.push(`Table structures or PDF row candidates detected: ${coverage.extractedTableCount}; verify against the source`);
+  if (coverage.supplementLinks?.length) lines.push(`Supplement links detected: ${coverage.supplementLinks.length}; separate review required`);
+  coverage.retrievalWarnings.forEach((warning) => lines.push(`Retrieval warning: ${warning}`));
 
-  lines.push('ARTICLE INFORMATION');
-  lines.push('─────────────────────────────────────────────────────');
-  lines.push(`Title: ${analysis.article.title}`);
-  lines.push(`Authors: ${analysis.article.authors.join(', ')}`);
-  lines.push(`Journal: ${analysis.article.journal}`);
-  if (analysis.article.year) lines.push(`Year: ${analysis.article.year}`);
-  if (analysis.article.doi) lines.push(`DOI: ${analysis.article.doi}`);
-  if (analysis.article.pmid) lines.push(`PMID: ${analysis.article.pmid}`);
-  lines.push(`Analyzed: ${new Date(analysis.analyzedAt).toLocaleString()}`);
-  lines.push('');
-
-  lines.push('OVERALL ASSESSMENT');
-  lines.push('─────────────────────────────────────────────────────');
-  lines.push(`✓ Trustworthy: ${analysis.verdict.trustworthy ? 'YES' : 'NO'}`);
-  lines.push(`✓ Clinically Applicable: ${analysis.verdict.clinicallyApplicable ? 'YES' : 'NO'}`);
-  lines.push(`✓ Read-Worthy: ${analysis.verdict.readWorthy ? 'YES' : 'NO'}`);
-  lines.push('');
-  lines.push(`Accuracy Score: ${analysis.accuracyScore.score}/10 (${analysis.accuracyScore.grade})`);
-  lines.push(`Bias Risk Score: ${analysis.biasScore.score}/10 (${analysis.biasScore.overallRisk})`);
-  lines.push(`Methods Quality: ${analysis.methodsScore.score}/10`);
-  lines.push(`Reference Check: ${analysis.referenceCheck.status}`);
-  lines.push(`Conflict of Interest: ${analysis.conflictOfInterest.status}`);
-  lines.push('');
-
-  lines.push('STUDY DESIGN');
-  lines.push('─────────────────────────────────────────────────────');
-  lines.push(`Type: ${analysis.studyDesign.type}`);
-  lines.push(`CEBM Level: ${analysis.studyDesign.cebtLevel} — ${analysis.studyDesign.cebtDescription}`);
-  if (analysis.studyDesign.isPreregistered) {
-    lines.push(`Pre-registered: YES${analysis.studyDesign.registrationId ? ` (${analysis.studyDesign.registrationId})` : ''}`);
-  } else {
-    lines.push('Pre-registered: NO');
-  }
-  lines.push('');
-
-  lines.push('PLAIN LANGUAGE SUMMARY');
-  lines.push('─────────────────────────────────────────────────────');
-  lines.push(`📌 ${analysis.summary.oneLiner}\n`);
-  lines.push('What They Did:');
-  analysis.summary.whatTheyDid.forEach((item) => lines.push(`  • ${item}`));
-  lines.push('');
-  lines.push('What They Found:');
-  analysis.summary.whatTheyFound.forEach((item) => lines.push(`  • ${item}`));
-  lines.push('');
-  lines.push(`Why It Matters: ${analysis.summary.whyItMatters}`);
-  lines.push(`Who Should Care: ${analysis.summary.whoShouldCare}`);
-  lines.push(`Bottom Line: ${analysis.summary.bottomLine}`);
-  lines.push('');
-
-  lines.push('ACCURACY ANALYSIS');
-  lines.push('─────────────────────────────────────────────────────');
-  lines.push(`Score: ${analysis.accuracyScore.score}/10 (Grade: ${analysis.accuracyScore.grade})\n`);
-  if (analysis.accuracyScore.strengths.length > 0) {
-    lines.push('Strengths:');
-    analysis.accuracyScore.strengths.forEach((s) => lines.push(`  ✓ ${s}`));
-    lines.push('');
-  }
-  if (analysis.accuracyScore.weaknesses.length > 0) {
-    lines.push('Weaknesses:');
-    analysis.accuracyScore.weaknesses.forEach((w) => lines.push(`  ✗ ${w}`));
-    lines.push('');
-  }
-  if (analysis.accuracyScore.redFlags.length > 0) {
-    lines.push('🚩 Red Flags:');
-    analysis.accuracyScore.redFlags.forEach((rf) => lines.push(`  ⚠️  ${rf}`));
-    lines.push('');
-  }
-
-  lines.push('BIAS RISK ANALYSIS');
-  lines.push('─────────────────────────────────────────────────────');
-  lines.push(`Score: ${analysis.biasScore.score}/10 (Risk Level: ${analysis.biasScore.overallRisk.toUpperCase()})\n`);
-  lines.push(analysis.biasScore.overallReasoning);
-  lines.push('');
-  if (analysis.biasScore.biasesFound.length > 0) {
-    lines.push('Biases Detected:');
-    analysis.biasScore.biasesFound.forEach((bias) => {
-      lines.push(`  • ${bias.type} [${bias.severity.toUpperCase()}]`);
-      lines.push(`    ${bias.explanation}`);
-    });
-    lines.push('');
-  }
-  if (analysis.biasScore.positivePractices.length > 0) {
-    lines.push('Positive Practices (Bias Reduction):');
-    analysis.biasScore.positivePractices.forEach((p) => lines.push(`  ✓ ${p}`));
-    lines.push('');
-  }
-
-  lines.push('METHODS QUALITY');
-  lines.push('─────────────────────────────────────────────────────');
-  lines.push(`Score: ${analysis.methodsScore.score}/10\n`);
-  lines.push(`Sample Size: ${analysis.methodsScore.sampleSizeExplanation}`);
-  lines.push(`Power Calculation: ${analysis.methodsScore.hasPowerCalculation ? 'YES' : 'NO'}`);
-  lines.push(`Blinding: ${analysis.methodsScore.hasBlinding ? `YES (${analysis.methodsScore.blindingDetails})` : 'NO or Not Reported'}`);
-  lines.push(`Confounding Addressed: ${analysis.methodsScore.confoundingAddressed ? `YES (${analysis.methodsScore.confoundingMethod})` : 'NO'}`);
-  lines.push(`Missing Data Handled: ${analysis.methodsScore.missingDataHandled ? `YES (${analysis.methodsScore.missingDataMethod})` : 'NO or Not Reported'}`);
-  if (analysis.methodsScore.reportingFramework !== 'none' && analysis.methodsScore.reportingFramework !== 'unknown') {
-    lines.push(`Reporting Framework: ${analysis.methodsScore.reportingFramework} (Adheres: ${analysis.methodsScore.adheresToFramework ? 'YES' : 'NO'})`);
-  }
-  lines.push('');
-  if (analysis.methodsScore.statisticalMethodsUsed.length > 0) {
-    lines.push('Statistical Methods:');
-    analysis.methodsScore.statisticalMethodsUsed.forEach((m) => lines.push(`  • ${m}`));
-    lines.push('');
-  }
-  if (analysis.methodsScore.strengths.length > 0) {
-    lines.push('Strengths:');
-    analysis.methodsScore.strengths.forEach((s) => lines.push(`  ✓ ${s}`));
-    lines.push('');
-  }
-  if (analysis.methodsScore.issues.length > 0) {
-    lines.push('Issues:');
-    analysis.methodsScore.issues.forEach((i) => lines.push(`  ✗ ${i}`));
-    lines.push('');
-  }
-
-  lines.push('REFERENCE VERIFICATION');
-  lines.push('─────────────────────────────────────────────────────');
-  lines.push(`Status: ${analysis.referenceCheck.status}`);
-  lines.push(`Total References: ${analysis.referenceCheck.totalReferences}`);
-  if (analysis.referenceCheck.selfCitationRate != null) {
-    lines.push(`Self-Citation Rate: ${Math.round(analysis.referenceCheck.selfCitationRate * 100)}%`);
-  }
-  if (analysis.referenceCheck.issues.length > 0) {
-    lines.push('\nIssues:');
-    analysis.referenceCheck.issues.forEach((i) => lines.push(`  ✗ ${i}`));
-  }
-  if (analysis.referenceCheck.positives.length > 0) {
-    lines.push('\nPositive Practices:');
-    analysis.referenceCheck.positives.forEach((p) => lines.push(`  ✓ ${p}`));
-  }
-  lines.push('');
-
-  lines.push('CONFLICT OF INTEREST');
-  lines.push('─────────────────────────────────────────────────────');
-  lines.push(`Status: ${analysis.conflictOfInterest.status}`);
-  lines.push(`Industry Funded: ${analysis.conflictOfInterest.industryFunded ? 'YES' : 'NO'}`);
-  if (analysis.conflictOfInterest.fundingSource) {
-    lines.push(`Funding Source: ${analysis.conflictOfInterest.fundingSource}`);
-  }
-  lines.push(`Details: ${analysis.conflictOfInterest.details}`);
-  lines.push('');
-
-  if (analysis.limitations.length > 0) {
-    lines.push('LIMITATIONS');
-    lines.push('─────────────────────────────────────────────────────');
-    analysis.limitations.forEach((lim, i) => lines.push(`${i + 1}. ${lim}`));
-    lines.push('');
-  }
-
-  lines.push('OVERALL VERDICT');
-  lines.push('─────────────────────────────────────────────────────');
+  lines.push('', 'APPRAISAL OVERVIEW');
+  lines.push(`Appraisal confidence: ${analysis.verdict.confidence}`);
+  lines.push(`Risk-of-bias concern: ${analysis.riskOfBias.overallRisk.replace('_', ' ')}`);
+  lines.push(`Applicability: ${analysis.verdict.applicability.replace('_', ' ')} (not a clinical applicability decision)`);
+  lines.push(`Reading priority: ${analysis.verdict.readingPriority}`);
+  lines.push(`Framework: ${analysis.studyDesign.appraisalFramework}`);
   lines.push(analysis.verdict.overallSummary);
-  lines.push('');
-  lines.push(`Key Takeaway: ${analysis.verdict.keyTakeaway}`);
-  if (analysis.verdict.caveats.length > 0) {
-    lines.push('\nCaveats When Using/Citing:');
-    analysis.verdict.caveats.forEach((c) => lines.push(`  ⚠️  ${c}`));
+  lines.push(`Key takeaway: ${analysis.verdict.keyTakeaway}`);
+
+  lines.push('', 'STUDY DESIGN');
+  lines.push(`Type: ${analysis.studyDesign.type}`);
+  lines.push(`Rationale: ${analysis.studyDesign.designRationale}`);
+  lines.push(`Preregistration reported: ${analysis.studyDesign.isPreregistered.toUpperCase()}${analysis.studyDesign.registrationId ? ` (${analysis.studyDesign.registrationId})` : ''}`);
+
+  lines.push('', 'PLAIN-LANGUAGE SUMMARY');
+  lines.push(analysis.summary.oneLiner);
+  lines.push('What the authors did:');
+  analysis.summary.whatTheyDid.forEach((item) => lines.push(`- ${item}`));
+  lines.push('What the authors reported:');
+  analysis.summary.whatTheyFound.forEach((item) => lines.push(`- ${item}`));
+  lines.push(`Why it may matter: ${analysis.summary.whyItMatters}`);
+  lines.push(`Who may care: ${analysis.summary.whoShouldCare}`);
+  lines.push(`Bottom line: ${analysis.summary.bottomLine}`);
+
+  if (analysis.pico) {
+    lines.push('', 'PICO EXTRACTION');
+    Object.entries(analysis.pico).forEach(([label, element]) => {
+      lines.push(`${label.toUpperCase()} [${element.status.replace(/_/g, ' ')}]: ${element.value}${element.evidenceIds.length ? ` (${element.evidenceIds.length} linked passage(s))` : ''}`);
+    });
   }
-  lines.push('');
 
-  lines.push('═══════════════════════════════════════════════════════');
-  lines.push(`Generated by MedLit v${analysis.analysisVersion}`);
-  lines.push(`Model: ${analysis.analysisModel}`);
-  lines.push(`Frameworks: Cochrane RoB 2, ROBINS-I, CONSORT, STROBE,`);
-  lines.push(`PRISMA 2020, Oxford CEBM, ICMJE COI Standards`);
-  lines.push('═══════════════════════════════════════════════════════');
+  lines.push('', 'EVIDENCE-LINKED DOMAIN JUDGMENTS');
+  lines.push(`Rubric: ${appraisal.rubricId} v${appraisal.rubricVersion}`);
+  appraisal.judgments.forEach((judgment) => {
+    lines.push('', `${judgment.domain.toUpperCase()} — ${judgment.judgment.replace('_', ' ').toUpperCase()}`);
+    lines.push(`Question: ${judgment.question}`);
+    lines.push(`Rationale: ${judgment.rationale}`);
+    const citations = judgment.evidenceIds.map((id) => evidenceById.get(id)).filter(Boolean);
+    if (citations.length === 0) lines.push('Evidence: no verified supporting passage; unable to assess.');
+    citations.forEach((item) => lines.push(`Evidence${item?.location || item?.section ? ` (${item.location ?? item.section})` : ''}: “${item?.quote}” [${item?.verified ? 'matched' : 'not matched'}]`));
+  });
 
+  lines.push('', 'METHODS REPORTING');
+  lines.push(`Sample size adequacy: ${answerLabel(analysis.methodsScore.sampleSizeAdequate)} — ${analysis.methodsScore.sampleSizeExplanation}`);
+  lines.push(`Power calculation: ${answerLabel(analysis.methodsScore.hasPowerCalculation)}`);
+  lines.push(`Blinding: ${answerLabel(analysis.methodsScore.hasBlinding)}${analysis.methodsScore.blindingDetails ? ` — ${analysis.methodsScore.blindingDetails}` : ''}`);
+  lines.push(`Confounding addressed: ${answerLabel(analysis.methodsScore.confoundingAddressed)}${analysis.methodsScore.confoundingMethod ? ` — ${analysis.methodsScore.confoundingMethod}` : ''}`);
+  lines.push(`Missing data handled: ${answerLabel(analysis.methodsScore.missingDataHandled)}${analysis.methodsScore.missingDataMethod ? ` — ${analysis.methodsScore.missingDataMethod}` : ''}`);
+  lines.push(`Statistical methods: ${analysis.methodsScore.statisticalMethodsUsed.join(', ') || 'Unable to assess'}`);
+
+  lines.push('', 'REFERENCES AND DISCLOSURES');
+  lines.push(`Reference check: ${analysis.referenceCheck.status}; ${analysis.referenceCheck.resolvedIdentifiers}/${analysis.referenceCheck.totalReferences} identifiers resolved; ${analysis.referenceCheck.retractionNoticesFound} notices found among checked identifiers.`);
+  lines.push(`COI disclosure: ${analysis.conflictOfInterest.status}; declared: ${answerLabel(analysis.conflictOfInterest.declared)}; industry funded: ${answerLabel(analysis.conflictOfInterest.industryFunded)}`);
+  lines.push(`Disclosure details: ${analysis.conflictOfInterest.details}`);
+  if (analysis.conflictOfInterest.fundingSource) lines.push(`Funding source: ${analysis.conflictOfInterest.fundingSource}`);
+
+  lines.push('', 'LIMITATIONS AND CAVEATS');
+  [...analysis.limitations, ...analysis.verdict.caveats]
+    .filter((item, index, all) => all.indexOf(item) === index)
+    .forEach((item) => lines.push(`- ${item}`));
+  if (appraisal.invalidEvidenceCount > 0) lines.push(`- ${appraisal.invalidEvidenceCount} unmatched generated quotation(s) did not support determinate judgments.`);
+
+  if (analysis.collection || analysis.tags?.length || analysis.notes) {
+    lines.push('', 'LIBRARY METADATA');
+    if (analysis.collection) lines.push(`Collection: ${analysis.collection}`);
+    if (analysis.tags?.length) lines.push(`Tags: ${analysis.tags.join(', ')}`);
+    if (analysis.notes) lines.push(`Notes: ${analysis.notes}`);
+  }
+
+  if (analysis.feedback?.length) {
+    lines.push('', 'REVIEWER CORRECTION HISTORY');
+    analysis.feedback.forEach((item) => lines.push(`- ${item.judgmentId}: ${item.rating}${item.suggestedJudgment ? `; suggested ${item.suggestedJudgment.replace(/_/g, ' ')}` : ''}${item.note ? ` — ${item.note}` : ''} (${item.createdAt}, contract ${item.analysisVersion})`));
+  }
+
+  lines.push('', `Generated by MedLit with ${analysis.analysisModel}. Verify important claims against the source and consult appropriate domain expertise.`);
   return lines.join('\n');
 }

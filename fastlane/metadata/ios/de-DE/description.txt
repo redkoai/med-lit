@@ -1,0 +1,10 @@
+Lies biomedizinische Studien mit einem klareren Blick auf die Evidenz. MedLit hilft, Studiendesign, Belegstellen, Berichtsqualität und Unsicherheit zu prüfen.
+
+Öffne Artikel per DOI, PubMed-Link oder unterstützter URL.
+Prüfe Fragen mit verknüpften Belegstellen.
+Speichere Berichte auf deinem Gerät und exportiere sie.
+Sieh Methodik und Grenzen der Quellenabdeckung.
+
+KI kann Fehler machen. Prüfe Zitate und Schlussfolgerungen im Original. MedLit ersetzt weder Peer Review noch Fachwissen oder klinisches Urteil. Für KI-Analysen verbindest du deinen eigenen unterstützten Anbieter; dabei können separate Kosten entstehen.
+
+Die Benutzeroberfläche ist derzeit auf Englisch.

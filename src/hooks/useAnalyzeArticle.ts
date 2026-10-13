@@ -1,31 +1,14 @@
-import { useState, useCallback } from 'react';
-import { Alert } from 'react-native';
+import { useState, useCallback, useRef } from 'react';
 import { router } from 'expo-router';
-import { parseArticleUrl, hasValidIdentifier, formatIdentifierLabel } from '../services/urlParser';
-import { fetchArticle } from '../services/articleFetcher';
-import { analyzeArticle } from '../services/aiAnalyzer';
+import { captureEvent } from '../services/productAnalytics';
+import { cacheCurrentAnalysis, getIdentityRevision } from '../services/currentAnalysis';
 import type { FetchState, ArticleAnalysis, AppSettings } from '../types';
-
-function getActiveApiKey(settings: AppSettings): string {
-  switch (settings.aiProvider) {
-    case 'openai': return settings.openAiApiKey;
-    case 'gemini': return settings.geminiApiKey;
-    default:       return settings.claudeApiKey;
-  }
-}
-
-function getActiveModel(settings: AppSettings): string {
-  switch (settings.aiProvider) {
-    case 'openai': return settings.openAiModel;
-    case 'gemini': return settings.geminiModel;
-    default:       return settings.claudeModel;
-  }
-}
+import { activeApiKey, runAnalysisPipeline } from '../services/analysisPipeline';
 
 export interface UseAnalyzeArticleParams {
   url: string;
   settings: AppSettings;
-  saveToHistory: (analysis: ArticleAnalysis) => Promise<void>;
+  saveToHistory: (analysis: ArticleAnalysis) => Promise<ArticleAnalysis>;
   onApiKeyMissing?: () => void;
 }
 
@@ -44,6 +27,7 @@ export function useAnalyzeArticle({
     message: '',
     progress: 0,
   });
+  const inFlight = useRef(false);
 
   const updateState = useCallback(
     (status: FetchState['status'], message: string, progress: number) => {
@@ -54,73 +38,46 @@ export function useAnalyzeArticle({
 
   const handleAnalyze = useCallback(async () => {
     if (!url.trim()) {
-      Alert.alert('No URL', 'Please paste an article URL.');
+      setFetchState({ status: 'error', message: 'Add a paper first.', error: 'Paste a PubMed link, DOI, or supported article URL to start.', progress: 0 });
       return;
     }
+    if (inFlight.current) return;
 
-    const activeKey = getActiveApiKey(settings);
+    const activeKey = activeApiKey(settings);
+    const identityRevision = getIdentityRevision();
     if (!activeKey) {
       onApiKeyMissing?.();
       return;
     }
 
     try {
+      inFlight.current = true;
+      void captureEvent('appraisal_started', { provider: settings.aiProvider });
       updateState('parsing_url', 'Parsing article URL...', 10);
-      const identifier = parseArticleUrl(url.trim());
-
-      if (!hasValidIdentifier(identifier)) {
-        if (!url.startsWith('http')) {
-          Alert.alert(
-            'Could not parse URL',
-            'Could not extract a PubMed ID, DOI, or recognizable identifier from this URL. Please check the link.'
-          );
-          setFetchState({ status: 'idle', message: '', progress: 0 });
-          return;
-        }
-      }
-
-      updateState(
-        'fetching_article',
-        `Fetching article data (${formatIdentifierLabel(identifier)})...`,
-        30
-      );
-
-      const article = await fetchArticle(identifier, {
-        unpaywallEmail: settings.unpaywallEmail,
-        sciHubEnabled: settings.sciHubEnabled,
-        sciHubMirror: settings.sciHubMirror,
-        onProgress: (msg) => updateState('fetching_article', msg, 50),
+      const analysis = await runAnalysisPipeline(url, settings, (message, progress) => {
+        updateState(progress < 60 ? 'fetching_article' : 'analyzing', message, progress);
       });
+      if (identityRevision !== getIdentityRevision()) throw new Error('The signed-in account changed during analysis. Please return to the original account before continuing.');
 
-      const providerLabel = { claude: 'Claude', openai: 'ChatGPT', gemini: 'Gemini' }[settings.aiProvider] ?? 'AI';
-      updateState('analyzing', `Analyzing with ${providerLabel}...`, 65);
-
-      const analysis = await analyzeArticle(
-        article,
-        identifier,
-        settings.aiProvider,
-        activeKey,
-        getActiveModel(settings),
-        (msg) => updateState('analyzing', msg, 80)
-      );
-
+      void captureEvent('appraisal_completed', { provider: settings.aiProvider, coverage: analysis.appraisal.sourceCoverage.level });
       updateState('done', 'Analysis complete!', 100);
 
-      if (settings.saveHistory) {
-        await saveToHistory(analysis);
-      }
-
-      (global as { __medlit_analysis?: ArticleAnalysis }).__medlit_analysis =
-        analysis;
+      await cacheCurrentAnalysis(analysis);
+      let persisted = analysis;
+      let saveWarning = '';
+      try { if (settings.saveHistory) persisted = await saveToHistory(analysis); }
+      catch { saveWarning = 'History could not be saved. Export this report before leaving or refreshing.'; }
+      await cacheCurrentAnalysis(persisted);
 
       setTimeout(() => {
         router.push({
           pathname: '/analysis',
-          params: { id: analysis.id },
+          params: { id: persisted.id, ...(saveWarning ? { saveWarning } : {}) },
         });
         setFetchState({ status: 'idle', message: '', progress: 0 });
       }, 600);
     } catch (error) {
+      void captureEvent('appraisal_failed', { provider: settings.aiProvider });
       const msg = error instanceof Error ? error.message : 'Unknown error';
       setFetchState({
         status: 'error',
@@ -128,6 +85,8 @@ export function useAnalyzeArticle({
         progress: 0,
         error: msg,
       });
+    } finally {
+      inFlight.current = false;
     }
   }, [url, settings, saveToHistory, updateState, onApiKeyMissing]);
 

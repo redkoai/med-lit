@@ -1,0 +1,260 @@
+export const GUIDES = [
+  {
+    "slug": "critical-appraisal",
+    "title": "Critical appraisal of a research paper",
+    "description": "A practical way to examine study design, source coverage, bias and applicability before relying on a finding.",
+    "sections": [
+      {
+        "heading": "Start with the question",
+        "text": "Write down the population, intervention or exposure, comparator and outcome. Then identify the study design. A randomized trial, cohort study and diagnostic study answer different questions and need different appraisal criteria. MedLit separates these fields so you can inspect them before interpreting a result."
+      },
+      {
+        "heading": "Check what was actually available",
+        "text": "A title and citation are not enough for a substantive appraisal. An abstract can describe a result while omitting allocation, missing data and outcome changes. MedLit labels full-text, abstract-only and metadata-only coverage. When a needed passage is unavailable, the defensible judgment is unclear, not a guessed answer."
+      },
+      {
+        "heading": "Follow each judgment to its evidence",
+        "text": "Open the bias and evidence sections and compare each supporting quotation with the paper. Exact quote matching checks that text was present; it cannot establish that the model interpreted it correctly. Look for limitations in selection, measurement, confounding, attrition and selective reporting that matter for the study design."
+      },
+      {
+        "heading": "Keep appraisal separate from a treatment decision",
+        "text": "An internally credible result may not apply to another population, setting or outcome. Consider effect size, uncertainty and the wider body of evidence. MedLit structures your review and exports it for discussion. It does not replace a systematic review, peer review or clinical judgment."
+      }
+    ],
+    "sources": [
+      {
+        "label": "MedLit appraisal methodology",
+        "url": "/methodology"
+      },
+      {
+        "label": "Cochrane Handbook",
+        "url": "https://training.cochrane.org/handbook/current"
+      },
+      {
+        "label": "CASP study-design checklists",
+        "url": "https://casp-uk.net/casp-tools-checklists/"
+      },
+      {
+        "label": "Appraise a randomized trial",
+        "url": "/guides/randomized-trial-critical-appraisal"
+      }
+    ]
+  },
+  {
+    "slug": "pubmed-paper-review",
+    "title": "Review a PubMed paper with AI",
+    "description": "Bring a PubMed link or PMID into MedLit, inspect the available source, and create an appraisal with your own AI provider.",
+    "sections": [
+      {
+        "heading": "Find the exact paper",
+        "text": "Use a PubMed record URL or PMID rather than a search-results page. You can also use a DOI. Confirm the title, authors and year after retrieval, especially when several papers report results from the same trial. MedLit attempts to retrieve bibliographic data and legally available text."
+      },
+      {
+        "heading": "Inspect source coverage before generation",
+        "text": "Open-access full text may be available through PubMed Central or Europe PMC. Some papers provide only an abstract. A provider connection does not unlock a publisher subscription or recover missing methods. MedLit retains retrieval warnings so the report reflects the text that was actually reviewed."
+      },
+      {
+        "heading": "Choose the model that will review it",
+        "text": "Connect an OpenAI, Anthropic Claude or Google Gemini API key directly. OpenRouter remains optional. Load the model list or enter an exact text-model ID, then run the connection test. Your provider bills the usage. Restricted permissions, exhausted credits or unavailable models produce an error instead of a fabricated report."
+      },
+      {
+        "heading": "Keep a review trail",
+        "text": "Review the quotations, uncertain judgments and limitations in the completed appraisal. With saving enabled, the Library keeps the report for later reading without another model call. Export a backup or a citation for your reading workflow. A model-generated appraisal is a starting point for source checking, not a PubMed endorsement."
+      }
+    ],
+    "sources": [
+      {
+        "label": "PubMed",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/"
+      },
+      {
+        "label": "PubMed Central",
+        "url": "https://pmc.ncbi.nlm.nih.gov/"
+      },
+      {
+        "label": "Try an example report",
+        "url": "/example"
+      }
+    ]
+  },
+  {
+    "slug": "bring-your-own-ai",
+    "title": "Use your own AI API key for research appraisal",
+    "description": "Connect OpenAI, Claude or Gemini directly, choose a model, and understand what MedLit sends and stores.",
+    "sections": [
+      {
+        "heading": "Direct provider connections",
+        "text": "MedLit supports the OpenAI API, Anthropic Claude API, Gemini Developer API and optional OpenRouter API. These are distinct services. Choose the provider that issued your key. Azure OpenAI, Vertex AI service accounts, AWS Bedrock credentials and Claude Code login tokens use different authentication contracts and are not accepted as interchangeable API keys."
+      },
+      {
+        "heading": "Choose and test a text model",
+        "text": "The connection dialog can load the provider’s model catalog. You can also enter a model ID, which is useful when a restricted key permits generation but not catalog access. Test and connect sends a brief prompt without a paper to check generation access. This small test and later appraisals may incur charges in your provider account."
+      },
+      {
+        "heading": "Understand the privacy boundary",
+        "text": "On the website, the API key stays in page memory until refresh or disconnect. It is sent directly to the selected provider, not stored in the MedLit database or analytics. An appraisal sends the retrieved article and review instructions to that provider. Use material you are permitted to share and consider the provider’s data settings."
+      },
+      {
+        "heading": "Accounts and subscriptions are different connections",
+        "text": "MedLit account access and AI credits are separate. Library cloud sync requires an activated cloud account; device saving is available without one. Standard API keys use provider API billing. OpenAI now documents a limited commercial Sign in with ChatGPT program, but MedLit has not activated that integration. A manual source packet can instead be used in ChatGPT, Claude or Gemini and imported back for evidence checking."
+      }
+    ],
+    "sources": [
+      {
+        "label": "OpenAI sign-in availability",
+        "url": "https://developers.openai.com/siwc/quickstart"
+      },
+      {
+        "label": "Gemini API keys",
+        "url": "https://ai.google.dev/gemini-api/docs/api-key"
+      },
+      {
+        "label": "AI settings",
+        "url": "/settings"
+      }
+    ]
+  },
+  {
+    "slug": "journal-club",
+    "title": "Journal club presentation: a paper review template",
+    "description": "Prepare a journal club discussion with a reusable paper review template covering the research question, methods, results, limitations and applicability.",
+    "sections": [
+      {
+        "heading": "What should a journal club presentation include?",
+        "text": "Use five parts: the research question, the study design, the main result, the limitations and the implications for your group. Keep the citation and source passages close to each claim. The downloadable worksheet below is an original MedLit discussion aid, not an official checklist or a validated scoring system."
+      },
+      {
+        "heading": "Frame the discussion",
+        "text": "Before generating an appraisal, ask what decision or scientific question the paper informs. Identify the population, comparison and primary outcome. A focused question helps a journal club avoid spending the whole meeting retelling the abstract."
+      },
+      {
+        "heading": "Build a source-linked agenda",
+        "text": "Review the methods, bias and evidence sections in MedLit. Choose a few judgments that materially affect interpretation and bring their source passages to the meeting. Mark missing information and competing interpretations explicitly. A quotation is a place to start the discussion, not an automatic resolution."
+      },
+      {
+        "heading": "Compare papers carefully",
+        "text": "Save appraisals to the Library and compare two or three papers by population, design, source coverage and limitations. Different populations or outcome definitions can make headline numbers incomparable. MedLit’s comparison is a reading aid; it does not calculate a pooled treatment effect or perform a meta-analysis."
+      },
+      {
+        "heading": "Export and revisit",
+        "text": "Export the report and citation for your meeting notes. Keep a library backup if you rely on browser storage. After discussion, record what changed your interpretation and which questions remain open. Do not treat a high traceability score as proof that a study is correct or clinically applicable."
+      },
+      {
+        "heading": "A practical meeting agenda",
+        "text": "Give the group enough background to understand the question, then spend most of the meeting on interpretation. For a 30-minute session, one possible plan is five minutes on the question, five on the design and results, fifteen on two or three contested judgments, and five on the remaining questions. Adapt the timing to your teaching programme and audience; this is a suggested format, not an evidence-based time requirement."
+      }
+    ],
+    "sources": [
+      {
+        "label": "Download the journal club worksheet (Markdown)",
+        "url": "/templates/journal-club-review.md"
+      },
+      {
+        "label": "Read the methodology",
+        "url": "/methodology"
+      },
+      {
+        "label": "Explore the teaching example",
+        "url": "/example"
+      },
+      {
+        "label": "Import a reading list",
+        "url": "/import"
+      },
+      {
+        "label": "BMJ Evidence-Based Medicine: why and how to run journal clubs",
+        "url": "https://ebm.bmj.com/content/22/6/232"
+      }
+    ]
+  },
+  {
+    "slug": "randomized-trial-critical-appraisal",
+    "title": "How to critically appraise a randomized controlled trial",
+    "description": "A reading guide for medical students and journal clubs: examine a trial’s question, allocation, missing data, outcome reporting and applicability.",
+    "sections": [
+      {
+        "heading": "Start with the result you are trying to interpret",
+        "text": "Name the population, comparison, outcome and follow-up period before judging a trial. Keep a short record of the effect estimate and its uncertainty. A study can report several outcomes, and concerns about one result may not apply equally to another. Read the methods and relevant supplementary material rather than relying on the abstract alone."
+      },
+      {
+        "heading": "Use the right framework",
+        "text": "Cochrane RoB 2 assesses a particular trial result across randomization, deviations from intended interventions, missing outcome data, outcome measurement and selection of the reported result. Use the official guidance when a formal assessment is required. MedLit’s source-linked reading prompts are not a validated implementation of RoB 2 and should not be reported as one."
+      },
+      {
+        "heading": "Work a concern through the source",
+        "text": "Suppose a fictional trial randomized 120 people and reported outcomes for 96. The missing count is 24, but the fraction alone cannot tell you the direction or size of bias. In your notes, separate what the report states from what you need to find: reasons for missingness, counts by group, and how the analysis handled unavailable outcomes. Bring the unanswered question to the discussion rather than converting it into a confident conclusion."
+      },
+      {
+        "heading": "Separate a reliable estimate from a useful decision",
+        "text": "After reviewing the methods, ask how the studied population, comparator and follow-up relate to the setting you care about. Write down what would need to be different for the conclusion to change. A structured appraisal supports that conversation; it does not determine an individual patient’s care."
+      },
+      {
+        "heading": "Use MedLit as a reading companion",
+        "text": "Paste the trial’s DOI or PubMed link into the workspace, connect an AI provider and review the retrieved source coverage. Inspect each generated judgment beside its supporting passage. If only an abstract is available, keep questions about unavailable methods unresolved. Use the journal club worksheet to record your own conclusions and disagreements."
+      }
+    ],
+    "sources": [
+      {
+        "label": "Cochrane Handbook, chapter 8: risk of bias in randomized trials",
+        "url": "https://www.cochrane.org/authors/handbooks-and-manuals/handbook/current/chapter-08"
+      },
+      {
+        "label": "CASP study-design checklists",
+        "url": "https://casp-uk.net/casp-tools-checklists/"
+      },
+      {
+        "label": "Journal club review template",
+        "url": "/guides/journal-club"
+      },
+      {
+        "label": "MedLit methodology and limitations",
+        "url": "/methodology"
+      }
+    ]
+  },
+  {
+    "slug": "abstract-vs-full-text",
+    "title": "Can you critically appraise a paper from its abstract?",
+    "description": "Understand what an abstract-only AI paper review can support, what it leaves unanswered, and when you need the full text.",
+    "sections": [
+      {
+        "heading": "The short answer",
+        "text": "An abstract can support an initial reading of the question, design and reported finding. It usually cannot support a complete appraisal of the methods. Treat an abstract-only review as a map of reported information and open questions. The absence of a detail in an abstract is not evidence that the authors did not perform the method."
+      },
+      {
+        "heading": "Record the source before the judgment",
+        "text": "Start your review notes with the material you actually have: abstract, main article, supplement, registration or protocol. Consider a fictional abstract that says participants were randomized but gives no allocation details. You can report that randomization is claimed. You cannot invent the sequence-generation or concealment procedure. Mark those details as unavailable in your current source."
+      },
+      {
+        "heading": "Find legally available full text",
+        "text": "A PubMed record may link to the publisher and to a free version in PubMed Central. Follow the available links and check that the title, authors and version match your citation. Library access may provide additional material. A model connection does not grant access to a subscription article, and an appraisal should not imply it read material that was never retrieved."
+      },
+      {
+        "heading": "What MedLit makes visible",
+        "text": "MedLit labels the retrieved source coverage and retains retrieval warnings. Its evidence checks distinguish matched quotations from unsupported model text. Matching a quotation establishes that the words occur in the source; it does not prove the interpretation. Review the context, missing information and uncertainty before using the output in a journal club or research note."
+      },
+      {
+        "heading": "Make the limitation useful",
+        "text": "End with a short list of questions that require the full paper. That list can guide a library search or a discussion with your supervisor. If the full text becomes available later, revisit the appraisal rather than treating an earlier abstract-only conclusion as final. Keep both the source and your own interpretation visible in the review trail."
+      }
+    ],
+    "sources": [
+      {
+        "label": "PubMed help: links to full text",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/help/#finding-the-full-text-of-an-article"
+      },
+      {
+        "label": "PubMed Central",
+        "url": "https://pmc.ncbi.nlm.nih.gov/"
+      },
+      {
+        "label": "MedLit source coverage methodology",
+        "url": "/methodology"
+      },
+      {
+        "label": "Review a PubMed paper",
+        "url": "/guides/pubmed-paper-review"
+      }
+    ]
+  }
+] as const;

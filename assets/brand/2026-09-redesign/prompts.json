@@ -1,0 +1,26 @@
+{
+  "tool": "Built-in image_gen; vector production masters authored from the selected concepts",
+  "initial": [
+    {
+      "brand": "synaptik",
+      "prompt": "Use case: logo-brand. Create ONE exceptional new standalone symbol for Synaptik, a calm, modern cognitive-practice and wellbeing app. Original distinctive geometric logo, extremely simple and memorable, premium contemporary graphic design. Primary idea: a soft sculptural synaptic connection, two substantial rounded interlocking hook forms offset diagonally, together suggesting a flowing S through generous negative space. The two forms almost connect, leaving one deliberate open breathing gap. Balanced but not generic, gently asymmetric, no tiny dots. Use ONLY a single flat deep forest-green fill (#284A3C). Transparent background, genuinely alpha-transparent. Center the entire mark on a square canvas, the symbol occupying about 65 percent of its width and height with generous even margins. Vector-like exact contours, solid fill, clean smooth curves, thick robust geometry that works at 24px. No letters or wordmark, no text of any kind, no icon container, no brain, no neuron illustration, no leaf, no flower, no infinity sign, no gradients, no shadows, no bevel, no texture, no mockup, no watermark. A finished production logo symbol, not a concept sheet."
+    },
+    {
+      "brand": "medlit",
+      "prompt": "Use case: logo-brand. Create ONE exceptional new standalone symbol for MedLit, an evidence-linked medical literature reading and appraisal app. Original distinctive geometric logo, very simple, confident editorial graphic design. Primary idea: two bold folded page shapes that together form a compact abstract M, with one crisp V-shaped negative-space reading crease between them. The silhouette should suggest opening and examining a paper without becoming a literal outlined book. Slight purposeful asymmetry: one page edge has a single diagonal clipped corner. Flat modern design, mostly straight planes with subtly rounded outer corners, strong instantly recognizable silhouette at 24px. Use ONLY a single flat rich violet fill (#5145CD). Transparent background, genuinely alpha-transparent. Center the entire mark on a square canvas, symbol occupies about 65 percent of canvas width and height with generous even margins. Vector-like precise clean contours, no fine lines. No text or wordmark, no literal medical cross, no flask, no microscope, no checkmark, no magnifying glass, no sparkle, no gradients, no shadows, no bevel, no texture, no icon container, no mockup, no watermark. A finished production logo symbol, not a concept sheet."
+    }
+  ],
+  "refinements": [
+    {
+      "brand": "synaptik",
+      "source": "/Users/anyaozmen/.codex/generated_images/01a0b69e-bc51-79b0-b6b2-fd7460ae669a/exec-7c6446a5-1e6b-4371-be1f-56a90c59fc61.png",
+      "prompt": "Refine this logo for finished production use. Preserve this exact two-hook S connection silhouette, spacing, scale and orientation. Make its entire fill perfectly solid, uniform deep forest green #284A3C, no tonal shading, no grain, no gradients. Clean every contour into a perfectly smooth vector-like edge and remove any stray edge pixels. Keep a genuinely alpha-transparent background. Nothing else added. No text, no container, no shadows. The final should feel like a mathematically clean, substantial graphic logo."
+    },
+    {
+      "brand": "medlit",
+      "source": "/Users/anyaozmen/.codex/generated_images/01a0b69e-bc51-79b0-b6b2-fd7460ae669a/exec-1b1dc094-8ca6-483f-acdc-88be1b9f4282.png",
+      "prompt": "Refine this MedLit logo into a more distinctive minimal M-and-pages monogram. Keep the violet color, two bold page shapes, clipped upper-right corner and overall open-book idea, but cut a wide clean upward triangular notch into the bottom inner part of each page so that the negative space under the middle reads as the underside of a strong letter M. The two outer vertical legs must remain substantial. The resulting single-color two-part silhouette should read BOTH M and an open research paper, not merely a generic solid book. Make the central separation generous enough to survive at 24px. Perfectly flat uniform #5145CD fill, smooth crisp exact contours, subtly rounded outer corners. Preserve generous square-canvas margins. Genuinely alpha-transparent background, no texture, no gradients, no shadows, no container, no text or additional symbols."
+    }
+  ],
+  "notes": "The MedLit transparent raster edit retained a checkerboard and was not used as a production asset. Final production files are clean SVG masters and deterministic PNG/ICO exports. Previous canonical icons were archived in this directory."
+}

@@ -1,10 +1,14 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { createElement } from 'react';
 import type { User } from 'firebase/auth';
+import { clearProviderSecrets } from '../services/secureSettings';
+import { clearCurrentAnalysis, invalidateIdentity } from '../services/currentAnalysis';
+import { changed } from './useSettings';
 import {
   signUpWithEmail,
   signInWithEmail,
   signInWithGoogle as authSignInWithGoogle,
+  signInWithApple as authSignInWithApple,
   signOut as authSignOut,
   resetPassword as authResetPassword,
   deleteAccount as authDeleteAccount,
@@ -17,6 +21,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   deleteAccount: (password?: string) => Promise<void>;
@@ -29,7 +34,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let previousUid: string | null = null;
     const unsubscribe = onAuthStateChanged((firebaseUser) => {
+      if (previousUid !== (firebaseUser?.uid ?? null)) {
+        invalidateIdentity();
+        void clearCurrentAnalysis();
+        if (previousUid) void clearProviderSecrets().then(changed);
+      }
+      previousUid = firebaseUser?.uid ?? null;
       setUser(firebaseUser);
       setLoading(false);
     });
@@ -50,6 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authSignInWithGoogle();
   }, []);
 
+  const signInWithApple = useCallback(async()=>{await authSignInWithApple();},[]);
+
   const signOut = useCallback(async () => {
     await authSignOut();
   }, []);
@@ -64,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return createElement(
     AuthContext.Provider,
-    { value: { user, loading, signUp, signIn, signInWithGoogle, signOut, resetPassword, deleteAccount } },
+    { value: { user, loading, signUp, signIn, signInWithGoogle, signInWithApple, signOut, resetPassword, deleteAccount } },
     children
   );
 }

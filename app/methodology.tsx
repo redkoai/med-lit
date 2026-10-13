@@ -1,357 +1,85 @@
 import React from 'react';
-import { ScrollView, Text, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Colors } from '../src/constants/colors';
+import { GuidePage } from '../src/components/GuidePage';
+import { AppraisalScore } from '../src/components/AppraisalScore';
+import { createExampleAppraisal } from '../src/services/exampleAppraisal';
+import { PageMeta } from '../src/components/PageMeta';
+
+const sections = [
+  {
+    title: '1. Retrieval and source coverage',
+    body: 'MedLit accepts a PubMed, PubMed Central, DOI, or supported preprint identifier. It attempts authoritative metadata and lawful open-access sources, including bounded server-side extraction of machine-readable PDF page text, HTML tables, and a small number of allowlisted supplements. Every report distinguishes full text, abstract only, and metadata only. Metadata-only records are not analyzed.',
+    bullets: ['PDF reading order and table-row candidates can be wrong; scans/OCR, figures, equations, and complex table meaning still require source review.', 'Abstract-only reports deliberately lower confidence and leave unsupported domains unable to assess.', 'Preprints are labeled; publication status is not treated as evidence of validity.'],
+  },
+  {
+    title: '2. Untrusted source boundary',
+    body: 'Article text is data, not an instruction. The analysis prompt tells the provider to ignore instructions embedded in an article, avoid outside facts, and use exact passages from the supplied source.',
+    bullets: ['Generated quotations are normalized and matched against the retrieved title, abstract, or full text.', 'A domain cannot receive a determinate judgment when none of its linked passages can be matched.', 'Unmatched quotations are counted and disclosed in the report.'],
+  },
+  {
+    title: '3. Design-specific question set',
+    body: 'The detected design selects a concise, published-framework-aligned question set. These are transparent MedLit questions informed by RoB 2, ROBIS, ROBINS-I, QUADAS-2, JBI, or CASP concepts; MedLit does not claim to reproduce or validate the official instruments.',
+    bullets: ['Each report shows the exact rubric ID, version, domain, question, judgment, rationale, and supporting passage.', 'Possible judgments are low, some concerns, high, unclear, or not applicable.', 'Design classification includes a rationale and can be wrong; readers should verify it.'],
+  },
+  {
+    title: '4. Deterministic safeguards',
+    body: 'The language model proposes structured evidence, summaries, and domain rationales. Application code verifies quotations, fills missing rubric questions, derives source coverage, and computes the displayed confidence and concern summaries.',
+    bullets: ['Appraisal confidence measures source completeness, evidence traceability, and domain assessability—not whether a paper is true. No matched evidence or no assessable domains means insufficient confidence.', 'Risk-of-bias concern and the overview are derived from visible domain judgments—not a hidden model verdict. No assessable domains is unclear, never low risk.', 'Narratives, methods, registration, and disclosure descriptions are model-generated and must be checked against the source. Clinical applicability is not assessed.'],
+  },
+  {
+    title: '5. Reference and disclosure scope',
+    body: 'When structured references contain DOI identifiers, MedLit attempts a bounded Crossref resolution and checks indexed update relationships for retraction or withdrawal notices. This is not a complete citation audit or a guarantee that an article is unretracted.',
+    bullets: ['The number of references found, identifiers present, identifiers checked, and notices found are reported.', 'Conflict-of-interest and funding fields only summarize disclosures visible in the supplied text.', 'Missing disclosure text is reported as missing or unclear, never assumed clear.'],
+  },
+  {
+    title: '6. Storage, revisions, and export',
+    body: 'Saved reports preserve the full structured analysis, analysis contract version, timestamp, and revision. Users can reopen reports without spending provider tokens, compare papers, review individual judgments, organize collections, run local evidence alerts, create bounded read-only snapshots, and export or back up the library.',
+    bullets: ['Guest libraries and saved searches stay on the device.', 'Signed-in libraries can sync through Firebase when configured.', 'AI-provider keys never sync with the library, and portable links omit private notes and feedback.'],
+  },
+  {
+    title: 'Known limitations',
+    body: 'MedLit is an AI-assisted reading aid. It cannot reanalyze raw data, reliably interpret every table or figure, detect all statistical errors, establish causal truth, perform a complete retraction search, or replace domain expertise and peer review.',
+    bullets: ['English scientific prose is the primary supported language.', 'Paywalled full text is not bypassed.', 'Expert validation is an external release-evidence step; no expert agreement result is claimed until real blinded reviews are collected.'],
+  },
+];
 
 export default function MethodologyScreen() {
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>How MedLit Works</Text>
-      <Text style={styles.subtitle}>
-        Evidence-based critical appraisal using established medical research frameworks
-      </Text>
-
-      <Section title="📊 Scoring Overview">
-        <Text style={styles.text}>
-          MedLit analyzes scientific articles across <Bold>8 dimensions</Bold> using AI powered by Claude:
-        </Text>
-        <ScoreTable />
-      </Section>
-
-      <Section title="🎯 Study Design Classification">
-        <Text style={styles.text}>
-          Articles are classified using the <Bold>Oxford CEBM Levels of Evidence</Bold>:
-        </Text>
-        <BulletPoint text="Level 1: Systematic reviews, RCTs (highest quality)" />
-        <BulletPoint text="Level 2: Cohort studies" />
-        <BulletPoint text="Level 3: Case-control studies" />
-        <BulletPoint text="Level 4: Case series" />
-        <BulletPoint text="Level 5: Expert opinion (lowest quality)" />
-      </Section>
-
-      <Section title="✓ Accuracy Score (1-10)">
-        <Text style={styles.text}>
-          Evaluates internal scientific rigor:
-        </Text>
-        <BulletPoint text="Pre-registration (ClinicalTrials.gov, PROSPERO)" />
-        <BulletPoint text="Adequate sample size with power calculations" />
-        <BulletPoint text="Appropriate statistical methods" />
-        <BulletPoint text="Effect sizes + confidence intervals (not just p-values)" />
-        <BulletPoint text="Data/code availability for reproducibility" />
-        <BulletPoint text="Conservative interpretation avoiding causal claims" />
-
-        <GradeScale />
-      </Section>
-
-      <Section title="⚖️ Bias Risk Score (1-10)">
-        <Text style={styles.text}>
-          Uses <Bold>Cochrane RoB 2</Bold>, <Bold>ROBINS-I</Bold>, and <Bold>Newcastle-Ottawa Scale</Bold> to detect:
-        </Text>
-        <BulletPoint text="Selection bias (non-representative samples)" />
-        <BulletPoint text="Attrition bias (>20% dropout without ITT analysis)" />
-        <BulletPoint text="Detection bias (unblinded outcome assessment)" />
-        <BulletPoint text="Reporting bias (selective outcome reporting)" />
-        <BulletPoint text="Publication bias (funnel plot asymmetry)" />
-        <BulletPoint text="P-hacking (multiple testing without correction)" />
-        <BulletPoint text="HARKing (hypothesizing after results known)" />
-        <BulletPoint text="Confounding (unmeasured variables)" />
-      </Section>
-
-      <Section title="🔬 Methods Quality Score (1-10)">
-        <Text style={styles.text}>
-          Evaluates adherence to reporting standards (<Bold>CONSORT</Bold>, <Bold>STROBE</Bold>, <Bold>PRISMA</Bold>):
-        </Text>
-        <BulletPoint text="Sample size justification" />
-        <BulletPoint text="Blinding procedures" />
-        <BulletPoint text="Statistical assumptions checked" />
-        <BulletPoint text="Missing data handled properly" />
-        <BulletPoint text="Confounding addressed" />
-      </Section>
-
-      <Section title="📚 Reference Verification">
-        <Text style={styles.text}>
-          Checks citation quality:
-        </Text>
-        <BulletPoint text="Citation indexing consistency" />
-        <BulletPoint text="Claim-reference plausibility" />
-        <BulletPoint text="Self-citation rate (<30% is healthy)" />
-        <BulletPoint text="Citation of null/negative results" />
-      </Section>
-
-      <Section title="💰 Conflict of Interest">
-        <Text style={styles.text}>
-          Uses <Bold>ICMJE standards</Bold> to flag:
-        </Text>
-        <BulletPoint text="Industry funding with favorable results" />
-        <BulletPoint text="Missing COI disclosures" />
-        <BulletPoint text="Author financial relationships" />
-      </Section>
-
-      <Section title="📝 Plain Language Summary">
-        <Text style={styles.text}>
-          6-part summary following <Bold>NLM Health Literacy Guidelines</Bold>:
-        </Text>
-        <BulletPoint text="One-liner (elevator pitch)" />
-        <BulletPoint text="What they did (methods)" />
-        <BulletPoint text="What they found (results)" />
-        <BulletPoint text="Why it matters (significance)" />
-        <BulletPoint text="Who should care (audience)" />
-        <BulletPoint text="Bottom line (practical takeaway)" />
-      </Section>
-
-      <Section title="🎓 Calibration">
-        <Text style={styles.text}>
-          Scores are calibrated to real-world benchmarks:
-        </Text>
-        <BulletPoint text="Nature Medicine RCT: ~7.5 accuracy, ~7 bias" />
-        <BulletPoint text="Cochrane Systematic Review: ~8-9 accuracy, ~8 bias" />
-        <BulletPoint text="Case series: ~5 accuracy, ~5 bias" />
-        <BulletPoint text="Poor observational study: ~3-4 across dimensions" />
-      </Section>
-
-      <Section title="⚙️ AI Pipeline">
-        <Text style={styles.text}>
-          <Bold>Model:</Bold> Claude Sonnet 4 or Opus 4 (Anthropic)
-          {'\n'}
-          <Bold>Temperature:</Bold> 0.2 (low, for consistency)
-          {'\n'}
-          <Bold>Evidence requirement:</Bold> Every score must cite specific text
-          {'\n'}
-          <Bold>Safeguard:</Bold> Model explicitly instructed not to invent findings
-        </Text>
-      </Section>
-
-      <Section title="⚠️ Limitations">
-        <BulletPoint text="Text-based only - cannot re-analyze raw data" />
-        <BulletPoint text="Abstract-only analysis is limited (flagged clearly)" />
-        <BulletPoint text="Cannot verify every cited reference" />
-        <BulletPoint text="Not a substitute for expert peer review" />
-        <BulletPoint text="Optimized for English-language publications" />
-      </Section>
-
-      <Section title="📖 Standards Used">
-        <Text style={styles.smallText}>
-          • Oxford CEBM Levels of Evidence{'\n'}
-          • Cochrane Risk of Bias 2 (RoB 2){'\n'}
-          • ROBINS-I (non-randomized studies){'\n'}
-          • CONSORT 2010 (RCT reporting){'\n'}
-          • STROBE (observational studies){'\n'}
-          • PRISMA 2020 (systematic reviews){'\n'}
-          • EQUATOR Network standards{'\n'}
-          • ICMJE COI guidelines{'\n'}
-          • Newcastle-Ottawa Scale{'\n'}
-          • NLM Health Literacy Guidelines
-        </Text>
-      </Section>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          MedLit v1.0 • Evidence-based critical appraisal
-        </Text>
-      </View>
-    </ScrollView>
-  );
-}
-
-// ──── Components ──────────────────────────────────────────────────────────────
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-function Bold({ children }: { children: string }) {
-  return <Text style={styles.bold}>{children}</Text>;
-}
-
-function BulletPoint({ text }: { text: string }) {
-  return (
-    <View style={styles.bulletContainer}>
-      <Text style={styles.bullet}>•</Text>
-      <Text style={styles.bulletText}>{text}</Text>
-    </View>
-  );
-}
-
-function ScoreTable() {
-  const scores = [
-    { dimension: 'Accuracy', scale: '1-10', framework: 'Internal validity + methodology' },
-    { dimension: 'Bias Risk', scale: '1-10', framework: 'Cochrane RoB 2, ROBINS-I' },
-    { dimension: 'Methods', scale: '1-10', framework: 'CONSORT, STROBE, PRISMA' },
-    { dimension: 'References', scale: 'PASS/WARN/FAIL', framework: 'Citation-claim mapping' },
-    { dimension: 'Study Design', scale: 'Level 1-5', framework: 'Oxford CEBM' },
-    { dimension: 'COI', scale: 'Status', framework: 'ICMJE standards' },
-  ];
-
-  return (
-    <View style={styles.table}>
-      {scores.map((score, i) => (
-        <View key={i} style={styles.tableRow}>
-          <Text style={styles.tableCell1}>{score.dimension}</Text>
-          <Text style={styles.tableCell2}>{score.scale}</Text>
-          <Text style={styles.tableCell3}>{score.framework}</Text>
+    <>
+      <PageMeta title="Methodology — MedLit" description="Read MedLit’s transparent evidence, uncertainty, rubric, and validation contract." path="/methodology" />
+      <GuidePage title="Look inside the methodology." description="Transparent questions. Traceable passages. Explicit uncertainty." path="/methodology" active="methodology">
+      <Text style={styles.body}>The score below uses a fictional teaching example, not real research. Its calculation is the same function used to validate reports.</Text>
+      <AppraisalScore analysis={createExampleAppraisal()} expanded />
+      <Text accessibilityRole="header" style={styles.sectionTitle}>The complete appraisal process</Text>
+      {sections.map((section) => (
+        <View key={section.title} style={styles.section}>
+          <Text accessibilityRole="header" style={styles.sectionTitle}>{section.title}</Text>
+          <Text style={styles.body}>{section.body}</Text>
+          {section.bullets.map((bullet) => (
+            <View key={bullet} style={styles.bulletRow}>
+              <Text style={styles.bullet}>•</Text>
+              <Text style={styles.bulletText}>{bullet}</Text>
+            </View>
+          ))}
         </View>
       ))}
-    </View>
+      <Text style={styles.footer}>Analysis contract v4.1.0 · Last reviewed September 10, 2026</Text>
+      </GuidePage>
+    </>
   );
 }
-
-function GradeScale() {
-  const grades = [
-    { score: '9-10', grade: 'A+', desc: 'Exceptional rigor' },
-    { score: '8', grade: 'A', desc: 'Minor gaps' },
-    { score: '7', grade: 'B+', desc: 'Some concerns' },
-    { score: '6', grade: 'B', desc: 'Notable weaknesses' },
-    { score: '5', grade: 'C', desc: 'Significant issues' },
-    { score: '3-4', grade: 'D', desc: 'Major flaws' },
-    { score: '1-2', grade: 'F', desc: 'Fundamental errors' },
-  ];
-
-  return (
-    <View style={styles.gradeTable}>
-      {grades.map((g, i) => (
-        <View key={i} style={styles.gradeRow}>
-          <Text style={styles.gradeScore}>{g.score}</Text>
-          <Text style={styles.gradeGrade}>{g.grade}</Text>
-          <Text style={styles.gradeDesc}>{g.desc}</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
-// ──── Styles ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: Colors.primary,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  section: {
-    marginBottom: 28,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: 12,
-  },
-  text: {
-    fontSize: 15,
-    color: Colors.textPrimary,
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  smallText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  bold: {
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  bulletContainer: {
-    flexDirection: 'row',
-    marginBottom: 6,
-    paddingLeft: 8,
-  },
-  bullet: {
-    fontSize: 15,
-    color: Colors.primary,
-    marginRight: 8,
-    fontWeight: '700',
-  },
-  bulletText: {
-    flex: 1,
-    fontSize: 15,
-    color: Colors.textPrimary,
-    lineHeight: 22,
-  },
-  table: {
-    marginTop: 12,
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: 8,
-    padding: 12,
-  },
-  tableRow: {
-    flexDirection: 'row',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  tableCell1: {
-    flex: 1.2,
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  tableCell2: {
-    flex: 1,
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  tableCell3: {
-    flex: 2,
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  gradeTable: {
-    marginTop: 12,
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: 8,
-    padding: 12,
-  },
-  gradeRow: {
-    flexDirection: 'row',
-    paddingVertical: 6,
-    alignItems: 'center',
-  },
-  gradeScore: {
-    width: 50,
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  gradeGrade: {
-    width: 40,
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  gradeDesc: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  footer: {
-    marginTop: 40,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+  content: { padding: 20, paddingBottom: 48, width: '100%', maxWidth: 820, alignSelf: 'center' },
+  title: { fontSize: 30, fontWeight: '800', color: Colors.primary, marginBottom: 8 },
+  subtitle: { fontSize: 17, lineHeight: 25, color: Colors.textSecondary, marginBottom: 28 },
+  section: { backgroundColor: Colors.surface, borderRadius: 14, borderWidth: 1, borderColor: Colors.border, padding: 20, marginBottom: 16 },
+  sectionTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary, marginBottom: 10 },
+  body: { fontSize: 15, lineHeight: 23, color: Colors.textPrimary, marginBottom: 10 },
+  bulletRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 7 },
+  bullet: { color: Colors.primary, fontWeight: '800', marginRight: 9, lineHeight: 22 },
+  bulletText: { flex: 1, fontSize: 15, lineHeight: 22, color: Colors.textSecondary },
+  footer: { textAlign: 'center', color: Colors.textSecondary, fontSize: 13, marginTop: 18 },
 });

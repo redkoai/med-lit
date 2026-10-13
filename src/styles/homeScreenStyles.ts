@@ -78,7 +78,10 @@ export const homeScreenStyles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   clearBtn: {
-    padding: 6,
+    width: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   analyzeBtn: {
     borderRadius: 14,
@@ -142,7 +145,8 @@ export const homeScreenStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 6,
+    minHeight: 44,
+    paddingVertical: 8,
   },
   exampleUrl: {
     flex: 1,
@@ -274,6 +278,7 @@ export const homeScreenStyles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: Colors.accentLight,
     borderRadius: 10,
+    minHeight: 44,
   },
   seoLinkText: {
     fontSize: 13,
@@ -288,6 +293,7 @@ export const homeScreenStyles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: Colors.scienceLight,
     borderRadius: 10,
+    minHeight: 44,
   },
   shareMedlitText: {
     fontSize: 13,
@@ -323,7 +329,7 @@ export const homeScreenStyles = StyleSheet.create({
   },
   apiKeyPromptText: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: '#4B5563',
     lineHeight: 17,
   },
 
@@ -343,6 +349,7 @@ export const homeScreenStyles = StyleSheet.create({
   navItem: {
     flex: 1,
     alignItems: 'center',
+    minHeight: 50,
     paddingVertical: 8,
     gap: 3,
   },

@@ -1,6 +1,6 @@
 import type { RawArticleData } from '../../types';
 import { fetchWithTimeout } from '../network';
-import { parseXmlText, parseXmlArray } from '../xmlUtils';
+import { parseXmlText, parseXmlArray, parseJatsDocument } from '../xmlUtils';
 
 const NCBI_BASE = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
 
@@ -11,7 +11,7 @@ export async function fetchFromPubMed(pmid: string): Promise<Partial<RawArticleD
   const xml = await res.text();
 
   const title = parseXmlText(xml, 'ArticleTitle');
-  const abstractText = parseXmlText(xml, 'AbstractText');
+  const abstractText = parseXmlArray(xml, 'AbstractText').join('\n\n');
   const journalTitle = parseXmlText(xml, 'Title');
   const yearStr = parseXmlText(xml, 'Year');
 
@@ -34,6 +34,10 @@ export async function fetchFromPubMed(pmid: string): Promise<Partial<RawArticleD
   const pmcid = pmcMatch ? pmcMatch[1].replace('PMC', '') : undefined;
 
   const keywords = parseXmlArray(xml, 'Keyword');
+  const publicationTypes = parseXmlArray(xml, 'PublicationType');
+  const retractionStatus = publicationTypes.some((type) => /retracted publication|retraction of publication/i.test(type))
+    ? 'notice_found'
+    : 'no_notice_found';
 
   return {
     title,
@@ -45,28 +49,33 @@ export async function fetchFromPubMed(pmid: string): Promise<Partial<RawArticleD
     pmcid,
     abstract: abstractText,
     keywords,
+    availableSections: abstractText ? ['abstract'] : [],
+    retractionStatus,
+    sourceUrls: [`https://pubmed.ncbi.nlm.nih.gov/${pmid}/`],
     isPreprint: false,
   };
 }
 
-export async function fetchPMCFullText(pmcid: string): Promise<string | null> {
+export async function fetchPMCFullText(pmcid: string): Promise<{
+  fullText: string;
+  references: import('../../types').ArticleReference[];
+  availableSections: string[];
+  sourceUrl: string;
+} | null> {
   try {
     const url = `${NCBI_BASE}/efetch.fcgi?db=pmc&id=${pmcid}&rettype=full&retmode=xml`;
     const res = await fetchWithTimeout(url);
     if (!res.ok) return null;
     const xml = await res.text();
 
-    const bodyMatch = xml.match(/<body>([\s\S]*?)<\/body>/i);
-    if (!bodyMatch) return null;
-
-    const text = bodyMatch[1]
-      .replace(/<title[^>]*>([^<]+)<\/title>/gi, '\n## $1\n')
-      .replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, '\n$1\n')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s{3,}/g, '\n\n')
-      .trim();
-
-    return text.length > 200 ? text : null;
+    const parsed = parseJatsDocument(xml);
+    if (!parsed.fullText) return null;
+    return {
+      fullText: parsed.fullText,
+      references: parsed.references,
+      availableSections: parsed.availableSections,
+      sourceUrl: `https://pmc.ncbi.nlm.nih.gov/articles/PMC${pmcid}/`,
+    };
   } catch {
     return null;
   }

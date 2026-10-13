@@ -9,57 +9,49 @@ interface Props {
   verdict: OverallVerdictType;
 }
 
-function VerdictPill({
+function AssessmentPill({
   label,
   value,
-  trueIcon,
-  falseIcon,
+  color,
+  icon,
 }: {
   label: string;
-  value: boolean;
-  trueIcon: keyof typeof Ionicons.glyphMap;
-  falseIcon: keyof typeof Ionicons.glyphMap;
+  value: string;
+  color: string;
+  icon: keyof typeof Ionicons.glyphMap;
 }) {
-  const color = value ? Colors.success : Colors.danger;
-  const bg = value ? Colors.successLight : Colors.dangerLight;
-
   return (
-    <View style={[styles.pill, { backgroundColor: bg }]}>
-      <Ionicons name={value ? trueIcon : falseIcon} size={14} color={color} />
-      <Text style={[styles.pillText, { color }]}>{label}</Text>
+    <View style={[styles.pill, { backgroundColor: `${color}18` }]}>
+      <Ionicons name={icon} size={14} color={color} />
+      <Text style={[styles.pillText, { color }]}>{label}: {value}</Text>
     </View>
   );
 }
 
 export function OverallVerdict({ verdict }: Props) {
-  const gradientColors: [string, string] = verdict.trustworthy
-    ? [Colors.successLight, '#F0FDF9']
-    : verdict.clinicallyApplicable
-    ? ['#FEF3C7', '#FFFBEB']
-    : [Colors.dangerLight, '#FFF5F5'];
+  const confidenceColor = verdict.confidence === 'higher'
+    ? Colors.success
+    : verdict.confidence === 'moderate'
+      ? Colors.accent
+      : verdict.confidence === 'lower' ? Colors.warning : Colors.textSecondary;
+  const gradientColors: [string, string] = [`${confidenceColor}14`, Colors.surface];
 
   return (
     <LinearGradient colors={gradientColors} style={styles.container}>
-      <Text style={styles.sectionLabel}>OVERALL VERDICT</Text>
+      <Text style={styles.sectionLabel}>APPRAISAL OVERVIEW</Text>
 
       <View style={styles.pillRow}>
-        <VerdictPill
-          label="Trustworthy"
-          value={verdict.trustworthy}
-          trueIcon="shield-checkmark"
-          falseIcon="shield-outline"
+        <AssessmentPill
+          label="Appraisal support (heuristic)"
+          value={verdict.confidence.replace('_', ' ')}
+          color={confidenceColor}
+          icon="layers-outline"
         />
-        <VerdictPill
-          label="Clinically Applicable"
-          value={verdict.clinicallyApplicable}
-          trueIcon="medkit"
-          falseIcon="medkit-outline"
-        />
-        <VerdictPill
-          label="Read-Worthy"
-          value={verdict.readWorthy}
-          trueIcon="bookmark"
-          falseIcon="bookmark-outline"
+        <AssessmentPill
+          label="Applicability"
+          value={verdict.applicability.replace(/_/g, ' ')}
+          color={Colors.textSecondary}
+          icon="medkit-outline"
         />
       </View>
 
@@ -72,7 +64,7 @@ export function OverallVerdict({ verdict }: Props) {
 
       {verdict.caveats.length > 0 ? (
         <View style={styles.caveatsBox}>
-          <Text style={styles.caveatsLabel}>Key caveats when citing this paper:</Text>
+          <Text style={styles.caveatsLabel}>Key caveats before using or citing this appraisal:</Text>
           {verdict.caveats.map((c, i) => (
             <View key={i} style={styles.caveatRow}>
               <Ionicons name="alert-circle-outline" size={13} color={Colors.warning} />

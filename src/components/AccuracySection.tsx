@@ -1,74 +1,57 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, getScoreColor } from '../constants/colors';
+import { Colors } from '../constants/colors';
 import { SectionCard } from './SectionCard';
 import { BulletList } from './BulletList';
-import { ScoreCircle } from './ScoreCircle';
-import type { AccuracyScore } from '../types';
+import type { EvidenceConfidenceScore } from '../types';
 
 interface Props {
-  accuracyScore: AccuracyScore;
+  evidenceScore: EvidenceConfidenceScore;
 }
 
-const GRADE_COLORS: Record<string, string> = {
-  'A+': Colors.scoreExcellent,
-  'A': Colors.scoreExcellent,
-  'B+': Colors.scoreGood,
-  'B': Colors.scoreGood,
-  'C': Colors.scoreFair,
-  'D': Colors.scorePoor,
-  'F': Colors.scorePoor,
+const LABEL_COLORS: Record<EvidenceConfidenceScore['label'], string> = {
+  higher: Colors.scoreExcellent,
+  moderate: Colors.scoreGood,
+  lower: Colors.scoreFair,
+  insufficient: Colors.scorePoor,
 };
 
-export function AccuracySection({ accuracyScore }: Props) {
-  const badgeColor = getScoreColor(accuracyScore.score);
-  const gradeColor = GRADE_COLORS[accuracyScore.grade] || Colors.textSecondary;
+export function AccuracySection({ evidenceScore }: Props) {
+  const gradeColor = LABEL_COLORS[evidenceScore.label];
 
   return (
     <SectionCard
-      title="Accuracy & Rigor"
+      title="Appraisal support & limitations"
       icon="analytics-outline"
       iconColor={Colors.accent}
-      badge={`${accuracyScore.score}/10`}
-      badgeColor={badgeColor}
+      badge={evidenceScore.label}
+      badgeColor={gradeColor}
     >
       <View style={styles.topRow}>
-        <ScoreCircle
-          score={accuracyScore.score}
-          label="Accuracy"
-          size="medium"
-        />
-        <View style={styles.gradeBlock}>
-          <Text style={styles.gradeLabel}>Grade</Text>
-          <View style={[styles.gradeCircle, { borderColor: gradeColor }]}>
-            <Text style={[styles.gradeText, { color: gradeColor }]}>
-              {accuracyScore.grade}
-            </Text>
-          </View>
-        </View>
+        <Text style={{ color: Colors.textSecondary, fontSize: 13, lineHeight: 21 }}>This heuristic combines source coverage, matched quotations, and assessable domains. It is not a probability that the findings are correct or a validated quality rating.</Text>
       </View>
 
       {/* Red flags */}
-      {accuracyScore.redFlags.length > 0 ? (
+      {evidenceScore.redFlags.length > 0 ? (
         <View style={styles.redFlagBox}>
           <Text style={styles.redFlagTitle}>🚩 Red Flags</Text>
-          <BulletList items={accuracyScore.redFlags} color={Colors.danger} icon="!" />
+          <BulletList items={evidenceScore.redFlags} color={Colors.danger} icon="!" />
         </View>
       ) : null}
 
       {/* Strengths */}
-      {accuracyScore.strengths.length > 0 ? (
+      {evidenceScore.strengths.length > 0 ? (
         <View style={styles.block}>
           <Text style={styles.blockTitle}>Strengths</Text>
-          <BulletList items={accuracyScore.strengths} color={Colors.success} icon="✓" />
+          <BulletList items={evidenceScore.strengths} color={Colors.success} icon="✓" />
         </View>
       ) : null}
 
       {/* Weaknesses */}
-      {accuracyScore.weaknesses.length > 0 ? (
+      {evidenceScore.weaknesses.length > 0 ? (
         <View style={styles.block}>
           <Text style={styles.blockTitle}>Weaknesses</Text>
-          <BulletList items={accuracyScore.weaknesses} color={Colors.warning} icon="⚠" />
+          <BulletList items={evidenceScore.weaknesses} color={Colors.warning} icon="⚠" />
         </View>
       ) : null}
     </SectionCard>
@@ -95,15 +78,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   gradeCircle: {
-    width: 60,
-    height: 60,
+    minWidth: 92,
+    minHeight: 60,
     borderRadius: 30,
+    paddingHorizontal: 10,
     borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
   },
   gradeText: {
-    fontSize: 22,
+    fontSize: 11,
     fontWeight: '800',
   },
   redFlagBox: {

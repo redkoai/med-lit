@@ -15,8 +15,8 @@ const COI_CONFIG: Record<COIStatus, { icon: keyof typeof Ionicons.glyphMap; colo
     icon: 'shield-checkmark',
     color: Colors.success,
     bg: Colors.successLight,
-    label: 'No Conflict of Interest',
-    desc: 'COI statement present; no concerns identified.',
+    label: 'No conflict reported by the model',
+    desc: 'Generated disclosure assessment. Check the source statement; this does not establish absence of conflicts.',
   },
   DECLARED: {
     icon: 'warning',
@@ -30,14 +30,14 @@ const COI_CONFIG: Record<COIStatus, { icon: keyof typeof Ionicons.glyphMap; colo
     color: Colors.danger,
     bg: Colors.dangerLight,
     label: 'COI Flagged',
-    desc: 'Potential undisclosed or concerning conflict of interest detected.',
+    desc: 'The model raised a disclosure concern. Verify it against the source before drawing conclusions.',
   },
   MISSING: {
     icon: 'help-circle',
     color: Colors.textSecondary,
     bg: Colors.borderLight,
-    label: 'COI Statement Missing',
-    desc: 'No conflict of interest statement found in this article.',
+    label: 'Disclosure not established',
+    desc: 'The model did not establish a disclosure from the supplied extract. The full article may contain one.',
   },
 };
 
@@ -72,10 +72,10 @@ export function COISection({ coi, limitations }: Props) {
         </View>
       ) : null}
 
-      {coi.industryFunded ? (
+      {coi.industryFunded === 'yes' ? (
         <View style={[styles.industryBadge]}>
           <Ionicons name="business-outline" size={13} color={Colors.warning} />
-          <Text style={styles.industryText}>Industry-funded study — results may warrant additional scrutiny</Text>
+          <Text style={styles.industryText}>Industry funding reported by the model — verify the disclosure in the source</Text>
         </View>
       ) : null}
 

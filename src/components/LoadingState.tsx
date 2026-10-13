@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, View, Text, Animated, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import type { FetchState } from '../types';
@@ -17,15 +17,26 @@ const STEPS = [
 
 function PulsingDot({ color }: { color: string }) {
   const anim = useRef(new Animated.Value(0.4)).current;
+  const [reducedMotion, setReducedMotion] = useState(true);
 
   useEffect(() => {
-    Animated.loop(
+    let active = true;
+    AccessibilityInfo.isReduceMotionEnabled().then(value => { if (active) setReducedMotion(value); }).catch(() => {});
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReducedMotion);
+    return () => { active = false; subscription.remove(); };
+  }, []);
+
+  useEffect(() => {
+    if (reducedMotion) { anim.setValue(1); return; }
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(anim, { toValue: 1, duration: 700, useNativeDriver: true }),
         Animated.timing(anim, { toValue: 0.4, duration: 700, useNativeDriver: true }),
       ])
-    ).start();
-  }, [anim]);
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [anim, reducedMotion]);
 
   return (
     <Animated.View

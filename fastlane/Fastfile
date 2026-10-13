@@ -1,0 +1,94 @@
+require "json"
+require "fileutils"
+require "digest"
+require "time"
+require "deliver"
+require "deliver/setup"
+require "deliver/download_screenshots"
+default_platform(:ios)
+opt_out_usage
+skip_docs
+ROOT=File.expand_path("..",__dir__)
+BUNDLE_ID="com.redko.medlit"
+APP_NAME="MedLit"
+METADATA=File.join(__dir__,"metadata/ios")
+SCREENSHOTS=File.join(__dir__,"screenshots")
+
+def apple_key
+  required=%w[ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_FILEPATH]
+  missing=required.select{|key| ENV[key].to_s.strip.empty?}
+  UI.user_error!("App Store Connect credentials missing: #{missing.join(', ')}. Configure fastlane/.env locally; never commit credentials.") unless missing.empty?
+  UI.user_error!("The App Store key file does not exist.") unless File.file?(ENV.fetch("ASC_KEY_FILEPATH"))
+  app_store_connect_api_key(key_id:ENV.fetch("ASC_KEY_ID"),issuer_id:ENV.fetch("ASC_ISSUER_ID"),key_filepath:ENV.fetch("ASC_KEY_FILEPATH"),in_house:false,duration:1200)
+end
+
+def source_fingerprint
+ files=Dir.glob(File.join(ROOT,"{app,src,assets,plugins,fastlane,scripts,packages}","**","*"),File::FNM_EXTGLOB).select{|p|File.file?(p)&&!p.include?("/.env")&&!p.end_with?("report.xml","readiness.json")}
+ files+=Dir.glob(File.join(ROOT,"vendor","*-compat","**","*")).select{|p|File.file?(p)}
+ files+=%w[Gemfile Gemfile.lock .easignore app.json app.config.js app.config.cjs eas.json package.json package-lock.json].map{|f|File.join(ROOT,f)}.select{|p|File.file?(p)}
+ Digest::SHA256.hexdigest(files.sort.map{|p|p.delete_prefix(ROOT)+Digest::SHA256.file(p).hexdigest}.join("
+"))
+end
+
+def submission_ready!
+ path=File.join(__dir__,"readiness.json")
+ UI.user_error!("A verified release readiness record is required; see fastlane/README.md.") unless File.file?(path)
+ record=JSON.parse(File.read(path))
+ checks=%w[native_device_qa google_sign_in apple_sign_in account_deletion privacy_labels age_rating content_rights reviewer_access screenshots]
+ UI.user_error!("Release checks are incomplete: #{checks.reject{|k|record[k]==true}.join(', ')}") unless checks.all?{|k|record[k]==true}
+ UI.user_error!("The source changed after release verification.") unless record["source_sha256"]==source_fingerprint
+ UI.user_error!("Verified binary path and SHA-256 are required.") unless record["ipa_path"]&&File.file?(record["ipa_path"])&&Digest::SHA256.file(record["ipa_path"]).hexdigest==record["ipa_sha256"]
+ UI.user_error!("The screenshot set is missing.") if Dir.glob(File.join(SCREENSHOTS,"en-US","*.{png,jpg,jpeg}")).empty?
+ record
+end
+
+platform :ios do
+ desc "Validate every authored locale without contacting Apple"
+ lane :validate_metadata do
+  sh("ruby",File.join(__dir__,"validate_metadata.rb"))
+ end
+ desc "Show the exact current source fingerprint for the release evidence record"
+ lane :fingerprint do
+  UI.message(source_fingerprint)
+ end
+ desc "Read Apple account/app state and back up existing live AND editable metadata/screenshots"
+ lane :snapshot_live_listing do
+  key=apple_key
+  app=Spaceship::ConnectAPI::App.find(BUNDLE_ID)
+  UI.user_error!("This bundle ID has no App Store Connect app record yet. Register it in the existing Apple team first.") unless app
+  target=File.join(ROOT,"output/release/store-snapshots",Time.now.utc.strftime("%Y%m%dT%H%M%SZ"))
+  FileUtils.mkdir_p(target,mode:0700)
+  Deliver.cache[:app]=app
+  {"live"=>app.get_live_app_store_version(platform:Spaceship::ConnectAPI::Platform::IOS),"editable"=>app.get_edit_app_store_version(platform:Spaceship::ConnectAPI::Platform::IOS)}.each do |kind,version|
+   next unless version
+   options=FastlaneCore::Configuration.create(Deliver::Options.available_options,{api_key:key,app_identifier:BUNDLE_ID,platform:"ios",use_live_version:kind=="live",force:true,metadata_path:File.join(target,kind,"metadata"),screenshots_path:File.join(target,kind,"screenshots")})
+   Deliver::Setup.new.generate_metadata_files(app,version,options[:metadata_path],options)
+   # Use the raising implementation: an incomplete backup must block an upload.
+   Deliver::DownloadScreenshots.download(options,options[:screenshots_path])
+  end
+  File.write(File.join(target,"snapshot.json"),JSON.pretty_generate({bundle_id:BUNDLE_ID,app_id:app.id,at:Time.now.utc.iso8601}))
+  UI.success("Existing listing preserved in the private release output directory.")
+ end
+ desc "Build a signed App Store archive from the generated, tested native project"
+ lane :build do
+  validate_metadata
+  UI.user_error!("Generate the iOS project first with npm run release:prepare:ios.") unless File.directory?(File.join(ROOT,"ios"))
+  require_env=%w[APPLE_TEAM_ID]
+  UI.user_error!("APPLE_TEAM_ID is required for signing.") unless require_env.all?{|k|!ENV[k].to_s.empty?}
+  build_app(workspace:File.join(ROOT,"ios",APP_NAME+".xcworkspace"),scheme:APP_NAME,export_method:"app-store",output_directory:File.join(ROOT,"output/release"),output_name:APP_NAME+".ipa",export_team_id:ENV.fetch("APPLE_TEAM_ID"),clean:false)
+ end
+ desc "Upload localized text; always preserve live listing first and never submit automatically"
+ lane :upload_metadata do
+  validate_metadata
+  snapshot_live_listing
+  deliver(api_key:apple_key,app_identifier:BUNDLE_ID,metadata_path:METADATA,skip_binary_upload:true,skip_screenshots:true,submit_for_review:false,automatic_release:false,force:true,precheck_include_in_app_purchases:false)
+ end
+ desc "Upload the verified binary/screenshots and submit that build for review"
+ lane :submit do
+  validate_metadata
+  record=submission_ready!
+  snapshot_live_listing
+  key=apple_key
+  upload_to_app_store(api_key:key,app_identifier:BUNDLE_ID,ipa:record.fetch("ipa_path"),metadata_path:METADATA,screenshots_path:SCREENSHOTS,overwrite_screenshots:false,skip_screenshots:false,skip_metadata:false,submit_for_review:true,automatic_release:false,force:true,run_precheck_before_submit:true,precheck_include_in_app_purchases:false,submission_information:JSON.parse(ENV.fetch("ASC_SUBMISSION_INFORMATION_JSON")),app_review_information:JSON.parse(ENV.fetch("ASC_REVIEW_INFORMATION_JSON")))
+ end
+end

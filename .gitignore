@@ -32,3 +32,34 @@ yarn-error.log*
 /.next
 /out
 .vercel
+
+# Apple/App Store signing keys
+AuthKey_*.p8
+*.mobileprovision
+.env*
+
+# Release credentials and generated native/signing artifacts
+.bundle/
+vendor/bundle/
+fastlane/.env*
+!fastlane/.env.example
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/readiness.json
+*.p8
+*.p12
+*.mobileprovision
+*.ipa
+*.xcarchive/
+/ios/
+/android/
+output/release/
+output/release*
+
+# Local verification output and scratch artifacts
+/output/
+/tmp/
+/artifacts/
+/firebase-debug.log
+
+/node_modules

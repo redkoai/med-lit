@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function SummarySection({ summary }: Props) {
-  const [mode, setMode] = useState<'adult' | 'kid'>('adult');
+  const [mode, setMode] = useState<'full' | 'quick'>('full');
 
   const readabilityMetrics = useMemo(() => {
     const fullText = [
@@ -31,36 +31,40 @@ export function SummarySection({ summary }: Props) {
       <View style={styles.toggleRow}>
         <View style={styles.toggleContainer}>
           <TouchableOpacity
-            style={[styles.toggleBtn, mode === 'adult' && styles.toggleBtnActive]}
-            onPress={() => setMode('adult')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: mode === 'full' }}
+            style={[styles.toggleBtn, mode === 'full' && styles.toggleBtnActive]}
+            onPress={() => setMode('full')}
             activeOpacity={0.7}
           >
             <Ionicons
               name="school-outline"
               size={14}
-              color={mode === 'adult' ? '#fff' : Colors.textSecondary}
+              color={mode === 'full' ? '#fff' : Colors.textSecondary}
             />
-            <Text style={[styles.toggleText, mode === 'adult' && styles.toggleTextActive]}>
-              Adult
+            <Text style={[styles.toggleText, mode === 'full' && styles.toggleTextActive]}>
+              Full
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.toggleBtn, mode === 'kid' && styles.toggleBtnActive]}
-            onPress={() => setMode('kid')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: mode === 'quick' }}
+            style={[styles.toggleBtn, mode === 'quick' && styles.toggleBtnActive]}
+            onPress={() => setMode('quick')}
             activeOpacity={0.7}
           >
             <Ionicons
               name="happy-outline"
               size={14}
-              color={mode === 'kid' ? '#fff' : Colors.textSecondary}
+              color={mode === 'quick' ? '#fff' : Colors.textSecondary}
             />
-            <Text style={[styles.toggleText, mode === 'kid' && styles.toggleTextActive]}>
-              Kid
+            <Text style={[styles.toggleText, mode === 'quick' && styles.toggleTextActive]}>
+              Quick
             </Text>
           </TouchableOpacity>
         </View>
         <Text style={styles.toggleHint}>
-          {mode === 'kid' ? 'Simplified view' : 'Full detail'}
+          {mode === 'quick' ? 'Short extract' : 'Full detail'}
         </Text>
       </View>
 
@@ -69,7 +73,7 @@ export function SummarySection({ summary }: Props) {
         <Text style={styles.oneLiner}>{summary.oneLiner}</Text>
       </View>
 
-      {mode === 'adult' ? (
+      {mode === 'full' ? (
         <>
           {/* What they did */}
           <View style={styles.block}>
@@ -100,7 +104,7 @@ export function SummarySection({ summary }: Props) {
         </>
       ) : (
         <>
-          {/* Kid-friendly simplified sections */}
+          {/* Short extract from the same model-generated summary */}
           <View style={styles.block}>
             <View style={styles.blockHeader}>
               <Ionicons name="sparkles-outline" size={14} color={Colors.accent} />
@@ -124,12 +128,12 @@ export function SummarySection({ summary }: Props) {
       {/* Bottom line */}
       <View style={styles.bottomLine}>
         <Text style={styles.bottomLineLabel}>
-          {mode === 'kid' ? 'The big idea' : 'Bottom line'}
+          {mode === 'quick' ? 'The big idea' : 'Bottom line'}
         </Text>
         <Text style={styles.bottomLineText}>{summary.bottomLine}</Text>
       </View>
 
-      {mode === 'adult' ? (
+      {mode === 'full' ? (
         <>
           <Text style={styles.audience}>
             <Text style={styles.audienceLabel}>For: </Text>

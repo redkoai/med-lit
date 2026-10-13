@@ -1,0 +1,1 @@
+pubmed,doi,biyomedikal,literatür,yanlılık,alıntı,yöntem,bilim

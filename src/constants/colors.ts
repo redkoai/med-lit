@@ -1,63 +1,63 @@
 export const Colors = {
   // Primary palette
-  primary: '#0F2E4E',
-  primaryLight: '#1A4470',
-  primaryMuted: '#E8F0F9',
+  primary: '#192443',
+  primaryLight: '#243B61',
+  primaryMuted: '#E8EDF5',
 
   // Accent
-  accent: '#4F8EF7',
-  accentLight: '#EBF2FF',
+  accent: '#4C46C8',
+  accentLight: '#EEEDFF',
 
   // Scientific purple
-  science: '#7C3AED',
-  scienceLight: '#EDE9FE',
+  science: '#5D507D',
+  scienceLight: '#EEEAF4',
 
   // Backgrounds
-  background: '#F7F8FC',
+  background: '#F8F9FC',
   surface: '#FFFFFF',
   surfaceElevated: '#FAFBFE',
   border: '#E5E7EB',
   borderLight: '#F3F4F6',
 
   // Text
-  textPrimary: '#111827',
-  textSecondary: '#6B7280',
-  textTertiary: '#9CA3AF',
+  textPrimary: '#192443',
+  textSecondary: '#58647B',
+  textTertiary: '#647086',
   textOnDark: '#FFFFFF',
 
   // Score colors
-  scoreExcellent: '#10B981', // 8–10
-  scoreGood: '#3B82F6',      // 6–7
-  scoreFair: '#F59E0B',      // 4–5
-  scorePoor: '#EF4444',      // 1–3
+  scoreExcellent: '#047857', // 8–10
+  scoreGood: '#1D4ED8',      // 6–7
+  scoreFair: '#B45309',      // 4–5
+  scorePoor: '#B91C1C',      // 1–3
 
   // Severity colors
-  severityLow: '#10B981',
-  severityModerate: '#F59E0B',
-  severityHigh: '#EF4444',
+  severityLow: '#047857',
+  severityModerate: '#B45309',
+  severityHigh: '#B91C1C',
   severityCritical: '#7F1D1D',
 
   // Status colors
-  success: '#10B981',
+  success: '#047857',
   successLight: '#D1FAE5',
-  warning: '#F59E0B',
+  warning: '#B45309',
   warningLight: '#FEF3C7',
-  danger: '#EF4444',
+  danger: '#B91C1C',
   dangerLight: '#FEE2E2',
-  info: '#3B82F6',
+  info: '#1D4ED8',
   infoLight: '#DBEAFE',
 
   // Badge colors by study design level
   cebmLevel1: '#059669', // systematic review — dark green
-  cebmLevel2: '#10B981', // RCT — green
-  cebmLevel3: '#3B82F6', // cohort — blue
-  cebmLevel4: '#F59E0B', // case-control — amber
-  cebmLevel5: '#EF4444', // expert opinion — red
+  cebmLevel2: '#047857', // RCT — green
+  cebmLevel3: '#1D4ED8', // cohort — blue
+  cebmLevel4: '#B45309', // case-control — amber
+  cebmLevel5: '#B91C1C', // expert opinion — red
 
   // COI Status
-  coiClear: '#10B981',
-  coiDeclared: '#F59E0B',
-  coiFlagged: '#EF4444',
+  coiClear: '#047857',
+  coiDeclared: '#B45309',
+  coiFlagged: '#B91C1C',
   coiMissing: '#6B7280',
 } as const;
 

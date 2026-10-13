@@ -1,0 +1,15 @@
+node_modules/
+.git/
+.env*
+fastlane/.env*
+*.p8
+*.p12
+*.mobileprovision
+*.ipa
+*.xcarchive/
+output/
+artifacts/
+vendor/bundle/
+.bundle/
+.vercel/
+.studio-local/

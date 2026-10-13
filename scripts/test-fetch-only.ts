@@ -1,45 +1,25 @@
-/**
- * Test URL parsing + article fetch only (no API key needed).
- * Usage: npx tsx scripts/test-fetch-only.ts [url]
- */
-
-const testUrl =
-  process.argv[2] ||
-  'https://www.thelancet.com/journals/landig/article/piis2589-7500%2820%2930017-0/fulltext';
+/** Live retrieval smoke test using stable public NCBI endpoints. */
+import assert from 'node:assert/strict';
+import { fetchArticle } from '../src/services/articleFetcher';
+import { hasValidIdentifier, parseArticleUrl } from '../src/services/urlParser';
 
 async function main() {
-  const { parseArticleUrl, hasValidIdentifier, formatIdentifierLabel } = await import(
-    '../src/services/urlParser'
-  );
-  const { fetchArticle } = await import('../src/services/articleFetcher');
+  const input = process.argv[2] || 'https://pubmed.ncbi.nlm.nih.gov/26551272/';
+  const identifier = parseArticleUrl(input);
+  assert.ok(hasValidIdentifier(identifier), 'The input must contain a PMID, PMCID, DOI, or arXiv identifier.');
 
-  console.log('URL:', testUrl);
-  const identifier = parseArticleUrl(testUrl);
-  console.log('Parsed:', formatIdentifierLabel(identifier), identifier.doi ? `(${identifier.doi})` : '');
-  if (!hasValidIdentifier(identifier)) {
-    console.error('Could not extract PMID, DOI, or PMC ID from URL.');
-    process.exit(1);
-  }
-
-  console.log('\nFetching article...');
   const article = await fetchArticle(identifier, {
-    unpaywallEmail: 'medlit@example.com',
-    sciHubEnabled: false,
-    sciHubMirror: '',
-    onProgress: (msg) => console.log('  ', msg),
+    unpaywallEmail: '',
+    onProgress: (message) => console.log(message),
   });
-  console.log('\n--- Fetched ---');
-  console.log('Title:', article.title);
-  console.log('Authors:', article.authors?.slice(0, 5).join(', '));
-  console.log('Journal:', article.journal);
-  console.log('Year:', article.year);
-  console.log('Fetch source:', article.fetchSource);
-  console.log('Abstract length:', article.abstract?.length ?? 0);
-  if (article.abstract) console.log('Abstract (first 400 chars):', article.abstract.slice(0, 400) + '...');
-  console.log('\nFetch works. Add EXPO_PUBLIC_ANTHROPIC_API_KEY to .env.local and run scripts/test-analyze.ts for full analysis.');
+
+  assert.ok(article.title.length > 10, 'Expected article title metadata.');
+  assert.ok(article.abstract.length > 100 || (article.fullText?.length ?? 0) > 1000, 'Expected assessable article text.');
+  assert.notEqual(article.fetchSource, 'metadata_only', 'Metadata-only records must not enter analysis.');
+  console.log(`Fetch smoke test passed: ${article.fetchSource}, ${article.title.slice(0, 80)}`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : 'Fetch smoke test failed.');
+  process.exitCode = 1;
 });

@@ -1,0 +1,1 @@
+Erste Version mit beleggestützter Bewertung, Quellenabdeckung, Berichten und Export.

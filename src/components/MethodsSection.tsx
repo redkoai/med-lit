@@ -1,32 +1,31 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, getScoreColor } from '../constants/colors';
+import { Colors } from '../constants/colors';
 import { SectionCard } from './SectionCard';
 import { BulletList } from './BulletList';
-import { ScoreCircle } from './ScoreCircle';
-import type { MethodsScore } from '../types';
+import type { AssessmentAnswer, MethodsScore } from '../types';
 
 interface Props {
   methodsScore: MethodsScore;
 }
 
-function CheckRow({ label, value, na = false }: { label: string; value: boolean | null; na?: boolean }) {
-  if (na || value === null) {
+function CheckRow({ label, value }: { label: string; value: AssessmentAnswer }) {
+  if (value === 'not_applicable' || value === 'unclear') {
     return (
       <View style={styles.checkRow}>
         <Ionicons name="remove-circle-outline" size={16} color={Colors.textTertiary} />
         <Text style={[styles.checkLabel, { color: Colors.textTertiary }]}>{label}</Text>
-        <Text style={styles.naText}>N/A</Text>
+        <Text style={styles.naText}>{value === 'unclear' ? 'UNCLEAR' : 'N/A'}</Text>
       </View>
     );
   }
   return (
     <View style={styles.checkRow}>
       <Ionicons
-        name={value ? 'checkmark-circle' : 'close-circle'}
+        name={value === 'yes' ? 'checkmark-circle' : 'close-circle'}
         size={16}
-        color={value ? Colors.success : Colors.danger}
+        color={value === 'yes' ? Colors.success : Colors.danger}
       />
       <Text style={styles.checkLabel}>{label}</Text>
     </View>
@@ -34,22 +33,14 @@ function CheckRow({ label, value, na = false }: { label: string; value: boolean 
 }
 
 export function MethodsSection({ methodsScore }: Props) {
-  const badgeColor = getScoreColor(methodsScore.score);
 
   return (
     <SectionCard
       title="Methods & Statistics"
       icon="flask-outline"
       iconColor={Colors.accent}
-      badge={`${methodsScore.score}/10`}
-      badgeColor={badgeColor}
     >
       <View style={styles.topRow}>
-        <ScoreCircle
-          score={methodsScore.score}
-          label="Methods"
-          size="medium"
-        />
         <View style={styles.checklistBlock}>
           <CheckRow label="Adequate sample size" value={methodsScore.sampleSizeAdequate} />
           <CheckRow label="Power calculation" value={methodsScore.hasPowerCalculation} />
@@ -83,14 +74,15 @@ export function MethodsSection({ methodsScore }: Props) {
       {methodsScore.reportingFramework && methodsScore.reportingFramework !== 'none' ? (
         <View style={styles.frameworkRow}>
           <Ionicons
-            name={methodsScore.adheresToFramework ? 'checkmark-circle' : 'alert-circle'}
+            name={methodsScore.adheresToFramework === 'yes' ? 'checkmark-circle' : 'alert-circle'}
             size={14}
-            color={methodsScore.adheresToFramework ? Colors.success : Colors.warning}
+            color={methodsScore.adheresToFramework === 'yes' ? Colors.success : Colors.warning}
           />
           <Text style={styles.frameworkText}>
             {methodsScore.reportingFramework} reporting framework
-            {methodsScore.adheresToFramework === true ? ' — adhered to' : ''}
-            {methodsScore.adheresToFramework === false ? ' — not fully adhered to' : ''}
+            {methodsScore.adheresToFramework === 'yes' ? ' — reported as followed' : ''}
+            {methodsScore.adheresToFramework === 'no' ? ' — reporting gaps noted' : ''}
+            {methodsScore.adheresToFramework === 'unclear' ? ' — unable to assess' : ''}
           </Text>
         </View>
       ) : null}

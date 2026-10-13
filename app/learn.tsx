@@ -1,0 +1,29 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { GuidePage, guide as g } from '../src/components/GuidePage';
+import { AppraisalScore } from '../src/components/AppraisalScore';
+import { createExampleAppraisal } from '../src/services/exampleAppraisal';
+import { captureEvent } from '../src/services/productAnalytics';
+import { Colors as C } from '../src/constants/colors';
+const lessons = [
+  { name: 'Connect your AI', title: 'Your provider. Your choice of model.', body: 'Choose Connect on the Read page, then select OpenAI, Claude, Gemini or OpenRouter. Paste your provider API key and load its available models, or enter a model ID directly. Test and connect sends a small connection prompt, which may incur a provider charge.', next: 'Your browser keeps the key in page memory until refresh or disconnect. Native devices use secure storage. Appraisals use your provider balance. You can also use an external chat and import its structured response.', action: 'Go to the reading workspace', path: '/' },
+  { name: 'Read the score', title: 'Traceability is not truth.', body: 'The score below comes from a fictional teaching example. Expand its breakdown: source coverage contributes up to 4 points, quote matching up to 3, and assessable questions up to 2, plus a baseline of 1.', next: 'Now open the example and choose Bias & evidence. Follow a question to its supporting passage. Even an exact quotation can be interpreted incorrectly. A high score can coexist with serious bias concerns.', action: 'Explore the example report', path: '/example' },
+  { name: 'Keep your research', title: 'Come back to the whole report.', body: 'With Save appraisals enabled in AI & settings, completed reports go to your Library. Opening one reads the saved report without calling your AI provider again.', next: 'Add a collection, tags, or private notes in a saved report. Export a library backup before clearing your browser. A signed-in account uses a separate library; explicitly import guest work only if you want it uploaded.', action: 'Open your library', path: '/history' },
+  { name: 'Go a little deeper', title: 'Compare questions, not just numbers.', body: 'Import a reading list in DOI, RIS, BibTeX, or Zotero format. From the library, compare two or three saved papers by source coverage, PICO, methods, and limitations. Check whether the populations and designs are actually comparable.', next: 'Saved PubMed searches can be checked manually for new index results. These are not background surveillance or a complete retraction audit. Read the full methods and consult domain expertise before making decisions.', action: 'Import a reading list', path: '/import' },
+];
+export default function LearnScreen() {
+  const params = useLocalSearchParams<{ step?: string }>();
+  const [step, setStep] = useState(0);
+  const example = useMemo(createExampleAppraisal, []);
+  useEffect(() => { const n = Number(params.step); if (Number.isInteger(n) && n >= 0 && n < lessons.length) setStep(n); }, [params.step]);
+  useEffect(() => { void captureEvent('tutorial_opened'); }, []);
+  const lesson = lessons[step];
+  return <GuidePage title="A little guidance. A sharper read." description="Four short, interactive walkthroughs. No AI credits needed to learn your way around." path="/learn" active="learn">
+    <View style={s.steps} role="group" aria-label="Tutorial chapters">{lessons.map((item, i) => <Pressable key={item.name} accessibilityRole="button" accessibilityState={{ selected: i === step }} onPress={() => setStep(i)} style={[s.step, i === step && s.selected]}><Text style={[s.stepText, i === step && { color: C.accent }]}>{i + 1}. {item.name}</Text></Pressable>)}</View>
+    <View key={step} style={g.card} dataSet={{ motion: 'finding' }}><Text style={g.eyebrow}>CHAPTER {step + 1} OF 4</Text><Text role="heading" aria-level={2} style={g.heading}>{lesson.title}</Text><Text style={g.body}>{lesson.body}</Text>{step === 1 && <AppraisalScore analysis={example} expanded />}<Text style={g.body}>{lesson.next}</Text><Pressable accessibilityRole="link" onPress={() => router.push(lesson.path as never)} style={g.link}><Text style={g.linkText}>{lesson.action} ↗</Text></Pressable></View>
+    <View style={s.controls}><Pressable accessibilityRole="button" disabled={step === 0} onPress={() => setStep(v => v - 1)} style={[g.link, step === 0 && { opacity: 0.4 }]}><Text style={g.linkText}>← Previous</Text></Pressable>{step < lessons.length - 1 ? <Pressable accessibilityRole="button" onPress={() => setStep(v => v + 1)} style={g.button}><Text style={g.buttonText}>Next chapter →</Text></Pressable> : <Pressable accessibilityRole="link" onPress={() => router.push('/')} style={g.button}><Text style={g.buttonText}>Ready for a paper</Text></Pressable>}</View>
+    <View style={g.card}><Text style={g.heading}>Before trusting a finding, ask three things.</Text><Text style={g.body}>Did MedLit read the full text or only the abstract? Does the quotation match—and support—the judgment? What remains unclear or outside the scope of this analysis?</Text><Pressable accessibilityRole="link" onPress={() => router.push('/methodology')} style={g.link}><Text style={g.linkText}>Read the full methodology →</Text></Pressable></View>
+  </GuidePage>;
+}
+const s = StyleSheet.create({ steps: { flexDirection: 'row', flexWrap: 'wrap', gap: 9 }, step: { borderWidth: 1, borderColor: '#CFDFE5', minHeight: 48, paddingHorizontal: 15, borderRadius: 10, justifyContent: 'center' }, selected: { borderColor: C.accent, backgroundColor: C.accentLight }, stepText: { color: C.textSecondary, fontSize: 13, fontWeight: '600' }, controls: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16 } });

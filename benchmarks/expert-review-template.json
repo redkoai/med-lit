@@ -1,0 +1,5 @@
+{
+  "schemaVersion": "1.0.0",
+  "reviewProtocol": "Two independent domain-qualified reviewers, blinded to the MedLit result, answer the same rubric questions from the same source package. Resolve disagreements only after preserving both original reviews.",
+  "cases": []
+}

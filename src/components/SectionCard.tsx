@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+if (Platform.OS === 'android' && !(globalThis as {nativeFabricUIManager?: unknown}).nativeFabricUIManager && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -43,7 +43,7 @@ export function SectionCard({
 
   return (
     <View style={styles.card}>
-      <TouchableOpacity style={styles.header} onPress={toggle} activeOpacity={0.7}>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ expanded }} aria-expanded={expanded} style={styles.header} onPress={toggle} activeOpacity={0.7}>
         <View style={styles.headerLeft}>
           <Ionicons name={icon} size={18} color={iconColor} />
           <Text style={styles.title}>{title}</Text>

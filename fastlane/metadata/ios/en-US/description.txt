@@ -1,0 +1,10 @@
+Read biomedical papers with a clearer view of the evidence. MedLit helps you inspect study design, supporting passages, reporting quality, and uncertainty.
+
+Open a paper by DOI, PubMed link, or supported URL.
+Inspect evidence-linked appraisal questions.
+Keep a library on your device and export your work.
+Review the methodology and source-coverage limits.
+
+AI output can be wrong. Verify quotations and conclusions against the original paper. MedLit does not replace peer review, professional expertise, or clinical judgment. AI analysis uses your own supported provider connection; provider usage may incur separate charges.
+
+The app interface is currently in English.

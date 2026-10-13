@@ -1,0 +1,1 @@
+Kanıta bağlı değerlendirme, kaynak kapsamı, kayıtlı raporlar ve dışa aktarma araçları içeren ilk sürüm.

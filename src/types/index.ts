@@ -12,7 +12,6 @@ export type SourceType =
   | 'medrxiv'
   | 'arxiv'
   | 'springer'
-  | 'scihub'
   | 'unknown';
 
 export interface ArticleIdentifier {
@@ -25,6 +24,33 @@ export interface ArticleIdentifier {
 }
 
 // ─── Raw Article Data (before analysis) ──────────────────────────────────────
+
+export type SourceCoverageLevel = 'full_text' | 'abstract_only' | 'metadata_only';
+
+export interface ArticleReference {
+  raw: string;
+  doi?: string;
+  pmid?: string;
+  identifierStatus: 'resolved' | 'unresolved' | 'not_checked';
+  title?: string;
+  retractionStatus: 'no_notice_found' | 'notice_found' | 'not_checked';
+}
+
+export interface SourceCoverage {
+  level: SourceCoverageLevel;
+  analyzedCharacters: number;
+  availableCharacters: number;
+  wasTruncated: boolean;
+  availableSections: string[];
+  missingSections: string[];
+  referenceCount: number;
+  referencesWithIdentifiers: number;
+  referencesResolved: number;
+  retrievalWarnings: string[];
+  pdfPages?: number;
+  extractedTableCount?: number;
+  supplementLinks?: string[];
+}
 
 export interface RawArticleData {
   title: string;
@@ -39,9 +65,16 @@ export interface RawArticleData {
   pmcid?: string;
   abstract: string;
   fullText?: string;
-  references?: string[];
+  references?: ArticleReference[];
   keywords?: string[];
-  fetchSource: 'full_text' | 'abstract_only' | 'metadata_only';
+  fetchSource: SourceCoverageLevel;
+  availableSections?: string[];
+  retrievalWarnings?: string[];
+  sourceUrls?: string[];
+  retractionStatus?: 'no_notice_found' | 'notice_found' | 'not_checked';
+  pdfPages?: number;
+  extractedTableCount?: number;
+  supplementLinks?: string[];
   isPreprint: boolean;
 }
 
@@ -55,6 +88,7 @@ export type StudyDesignType =
   | 'Retrospective Cohort'
   | 'Case-Control'
   | 'Cross-Sectional'
+  | 'Diagnostic Accuracy Study'
   | 'Case Report / Case Series'
   | 'Qualitative Study'
   | 'Basic Science / In Vitro'
@@ -65,9 +99,9 @@ export type StudyDesignType =
 
 export interface StudyDesign {
   type: StudyDesignType;
-  cebtLevel: 1 | 2 | 3 | 4 | 5;
-  cebtDescription: string;
-  isPreregistered: boolean;
+  designRationale: string;
+  appraisalFramework: string;
+  isPreregistered: 'yes' | 'no' | 'unclear';
   registrationId?: string;
 }
 
@@ -82,11 +116,11 @@ export interface ArticleSummary {
   bottomLine: string;
 }
 
-// ─── Accuracy Score ───────────────────────────────────────────────────────────
+// ─── Evidence-grounded appraisal ─────────────────────────────────────────────
 
-export interface AccuracyScore {
+export interface EvidenceConfidenceScore {
   score: number; // 1–10
-  grade: 'A+' | 'A' | 'B+' | 'B' | 'C' | 'D' | 'F';
+  label: 'higher' | 'moderate' | 'lower' | 'insufficient';
   strengths: string[];
   weaknesses: string[];
   redFlags: string[];
@@ -102,9 +136,9 @@ export interface BiasItem {
   explanation: string;
 }
 
-export interface BiasScore {
+export interface RiskOfBiasAssessment {
   score: number; // 1–10 (10 = least biased)
-  overallRisk: 'low' | 'moderate' | 'high' | 'critical';
+  overallRisk: 'low' | 'some_concerns' | 'high' | 'unclear';
   biasesFound: BiasItem[];
   positivePractices: string[]; // things they did RIGHT to reduce bias
   overallReasoning: string;
@@ -112,32 +146,36 @@ export interface BiasScore {
 
 // ─── Methods Assessment ───────────────────────────────────────────────────────
 
+export type AssessmentAnswer = 'yes' | 'no' | 'unclear' | 'not_applicable';
+
 export interface MethodsScore {
   score: number; // 1–10
-  sampleSizeAdequate: boolean;
+  sampleSizeAdequate: AssessmentAnswer;
   sampleSizeExplanation: string;
   statisticalMethodsUsed: string[];
-  hasPowerCalculation: boolean;
-  hasBlinding: boolean;
+  hasPowerCalculation: AssessmentAnswer;
+  hasBlinding: AssessmentAnswer;
   blindingDetails?: string;
-  confoundingAddressed: boolean;
+  confoundingAddressed: AssessmentAnswer;
   confoundingMethod?: string;
-  missingDataHandled: boolean;
+  missingDataHandled: AssessmentAnswer;
   missingDataMethod?: string;
   issues: string[];
   strengths: string[];
   reportingFramework?: string; // CONSORT, STROBE, PRISMA, etc.
-  adheresToFramework?: boolean;
+  adheresToFramework?: AssessmentAnswer;
 }
 
 // ─── Reference Check ──────────────────────────────────────────────────────────
 
-export type RefCheckStatus = 'PASS' | 'WARN' | 'FAIL';
+export type RefCheckStatus = 'RESOLVED' | 'PARTIAL' | 'NOT_ASSESSED';
 
 export interface ReferenceCheck {
   status: RefCheckStatus;
   totalReferences: number;
-  selfCitationRate?: number; // 0–1
+  referencesWithIdentifiers: number;
+  resolvedIdentifiers: number;
+  retractionNoticesFound: number;
   issues: string[];
   indexingProblems: string[];
   positives: string[];
@@ -149,18 +187,79 @@ export type COIStatus = 'CLEAR' | 'DECLARED' | 'FLAGGED' | 'MISSING';
 
 export interface ConflictOfInterest {
   status: COIStatus;
-  declared: boolean;
+  declared: AssessmentAnswer;
   fundingSource?: string;
   details: string;
-  industryFunded: boolean;
+  industryFunded: AssessmentAnswer;
 }
 
-// ─── Overall Verdict ──────────────────────────────────────────────────────────
+export type AppraisalJudgmentValue =
+  | 'low'
+  | 'some_concerns'
+  | 'high'
+  | 'unclear'
+  | 'not_applicable';
+
+export interface EvidenceCitation {
+  id: string;
+  claim: string;
+  quote: string;
+  section?: string;
+  location?: string;
+  verified: boolean;
+}
+
+export type PicoStatus = 'identified' | 'not_reported' | 'not_applicable';
+
+export interface PicoElement {
+  value: string;
+  status: PicoStatus;
+  evidenceIds: string[];
+}
+
+export interface PicoExtraction {
+  population: PicoElement;
+  intervention: PicoElement;
+  comparator: PicoElement;
+  outcomes: PicoElement;
+  timeframe: PicoElement;
+}
+
+export interface JudgmentFeedback {
+  id: string;
+  judgmentId: string;
+  rating: 'agree' | 'disagree' | 'unsure';
+  suggestedJudgment?: AppraisalJudgmentValue;
+  note?: string;
+  createdAt: string;
+  analysisVersion: string;
+}
+
+export interface AppraisalJudgment {
+  id: string;
+  framework: string;
+  domain: string;
+  question: string;
+  judgment: AppraisalJudgmentValue;
+  rationale: string;
+  evidenceIds: string[];
+}
+
+export interface StructuredAppraisal {
+  rubricId: string;
+  rubricVersion: string;
+  evidence: EvidenceCitation[];
+  judgments: AppraisalJudgment[];
+  sourceCoverage: SourceCoverage;
+  invalidEvidenceCount: number;
+}
+
+// ─── Overall assessment ───────────────────────────────────────────────────────
 
 export interface OverallVerdict {
-  trustworthy: boolean;
-  clinicallyApplicable: boolean;
-  readWorthy: boolean;
+  confidence: 'higher' | 'moderate' | 'lower' | 'insufficient';
+  applicability: 'not_assessed' | 'unclear' | 'potentially_relevant';
+  readingPriority: 'high' | 'medium' | 'low';
   overallSummary: string;
   keyTakeaway: string;
   caveats: string[];
@@ -175,24 +274,32 @@ export interface ArticleAnalysis {
   identifier: ArticleIdentifier;
   studyDesign: StudyDesign;
   summary: ArticleSummary;
-  accuracyScore: AccuracyScore;
-  biasScore: BiasScore;
+  evidenceScore: EvidenceConfidenceScore;
+  riskOfBias: RiskOfBiasAssessment;
   methodsScore: MethodsScore;
   referenceCheck: ReferenceCheck;
   conflictOfInterest: ConflictOfInterest;
   limitations: string[];
   verdict: OverallVerdict;
+  appraisal: StructuredAppraisal;
+  pico?: PicoExtraction;
   analysisModel: string;
   analysisVersion: string;
+  articleKey: string;
+  revision: number;
+  collection?: string;
+  tags?: string[];
+  notes?: string;
+  feedback?: JudgmentFeedback[];
 }
 
 // ─── AI Provider ──────────────────────────────────────────────────────────────
 
-export type AIProvider = 'claude' | 'openai' | 'gemini';
+export type AIProvider = 'claude' | 'openai' | 'gemini' | 'openrouter';
 
-export type ClaudeModel = 'claude-sonnet-4-6' | 'claude-opus-4-6';
-export type OpenAIModel = 'gpt-4o' | 'gpt-4o-mini' | 'gpt-4-turbo';
-export type GeminiModel = 'gemini-2.0-flash' | 'gemini-1.5-pro';
+export type ClaudeModel = string;
+export type OpenAIModel = string;
+export type GeminiModel = string;
 
 // ─── App Settings ─────────────────────────────────────────────────────────────
 
@@ -212,11 +319,12 @@ export interface AppSettings {
   geminiApiKey: string;
   geminiModel: GeminiModel;
 
+  // User-authorized OpenRouter access (never cloud-synced).
+  openRouterApiKey: string;
+  openRouterModel: string;
+
   // Article fetching
   unpaywallEmail: string;
-  sciHubEnabled: boolean;
-  sciHubMirror: string;
-  corsProxyUrl: string;
   saveHistory: boolean;
 }
 
@@ -229,10 +337,13 @@ export interface HistoryEntry {
   year: number | null;
   url: string;
   analyzedAt: string;
-  accuracyScore: number;
-  biasScore: number;
+  evidenceScore: number;
+  biasConcernScore: number;
   studyDesign: string;
-  trustworthy: boolean;
+  confidence: OverallVerdict['confidence'];
+  coverageLevel: SourceCoverageLevel;
+  collection?: string;
+  tags?: string[];
 }
 
 // ─── Fetch State ──────────────────────────────────────────────────────────────

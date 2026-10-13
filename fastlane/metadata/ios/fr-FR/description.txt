@@ -1,0 +1,10 @@
+Lis les articles biomédicaux avec un regard plus clair sur les preuves. MedLit aide à examiner le plan d’étude, les passages cités, la qualité du compte rendu et les incertitudes.
+
+Ouvre un article par DOI, lien PubMed ou URL compatible.
+Examine des questions liées aux passages sources.
+Garde une bibliothèque sur ton appareil et exporte ton travail.
+Consulte la méthodologie et les limites des sources.
+
+L’IA peut se tromper. Vérifie les citations et conclusions dans l’article original. MedLit ne remplace ni l’évaluation par les pairs, ni l’expertise, ni le jugement clinique. L’analyse utilise ton propre fournisseur compatible, dont l’usage peut entraîner des frais distincts.
+
+L’interface de l’application est actuellement en anglais.

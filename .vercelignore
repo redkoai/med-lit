@@ -1,0 +1,17 @@
+.env*
+!.env.example
+*.p8
+*.mobileprovision
+.expo
+.git
+node_modules
+dist
+coverage
+benchmarks/private-*
+
+docs
+output
+artifacts
+tmp
+.gitignore
+firebase-debug.log

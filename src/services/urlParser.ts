@@ -31,7 +31,7 @@ const patterns: Array<{
   {
     name: 'pmc',
     test: (url) => {
-      const m = url.match(/ncbi\.nlm\.nih\.gov\/pmc\/articles\/PMC(\d+)/i);
+      const m = url.match(/(?:pmc\.ncbi\.nlm\.nih\.gov\/articles|ncbi\.nlm\.nih\.gov\/pmc\/articles)\/PMC(\d+)/i);
       if (!m) return null;
       return { pmcid: m[1], sourceType: 'pmc', originalUrl: url };
     },
@@ -134,30 +134,6 @@ const patterns: Array<{
       const m = url.match(/(?:link\.springer\.com|biomedcentral\.com).*?(10\.\d{4}\/[^\s?#"']+)/);
       if (!m) return null;
       return { doi: m[1], sourceType: 'springer', originalUrl: url };
-    },
-  },
-  // Sci-Hub (various mirrors)
-  {
-    name: 'scihub',
-    test: (url) => {
-      const scihubMirrors = [
-        'sci-hub.se', 'sci-hub.st', 'sci-hub.ru', 'sci-hub.ren',
-        'sci-hub.mksa.top', 'scihub.mksa.top',
-      ];
-      const isScihub = scihubMirrors.some((mirror) => url.includes(mirror));
-      if (!isScihub) return null;
-
-      // Try DOI in path
-      const doiMatch = url.match(/sci-hub\.[a-z.]+\/(10\.\d{4}\/[^\s?#"']+)/);
-      if (doiMatch) {
-        return { doi: doiMatch[1], sourceType: 'scihub', originalUrl: url };
-      }
-      // Try PMID in path
-      const pmidMatch = url.match(/sci-hub\.[a-z.]+\/(\d{5,9})(?:[/?#]|$)/);
-      if (pmidMatch) {
-        return { pmid: pmidMatch[1], sourceType: 'scihub', originalUrl: url };
-      }
-      return { sourceType: 'scihub', originalUrl: url };
     },
   },
 ];

@@ -1,0 +1,55 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "analyses",
+      "fieldPath": "article",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analyses",
+      "fieldPath": "appraisal",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analyses",
+      "fieldPath": "summary",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analyses",
+      "fieldPath": "riskOfBias",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analyses",
+      "fieldPath": "conflictsOfInterest",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analyses",
+      "fieldPath": "methodology",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analyses",
+      "fieldPath": "verdict",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analyses",
+      "fieldPath": "references",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analyses",
+      "fieldPath": "notes",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "analyses",
+      "fieldPath": "feedback",
+      "indexes": []
+    }
+  ]
+}

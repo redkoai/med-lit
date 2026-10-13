@@ -15,7 +15,7 @@ export async function fetchOpenAccessUrl(
     if (!data.is_oa) return null;
 
     const loc = data.best_oa_location;
-    return loc?.url_for_pdf || loc?.url || null;
+    return loc?.url_for_pdf || loc?.url || loc?.url_for_landing_page || null;
   } catch {
     return null;
   }

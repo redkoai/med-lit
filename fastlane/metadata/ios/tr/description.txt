@@ -1,0 +1,10 @@
+Biyomedikal makaleleri kanıtlara daha net bakarak oku. MedLit araştırma tasarımını, destekleyici bölümleri, raporlama kalitesini ve belirsizliği incelemeye yardımcı olur.
+
+DOI, PubMed bağlantısı veya desteklenen URL ile makale aç.
+Kaynak bölümlere bağlı soruları incele.
+Cihazında bir kütüphane tut ve çalışmalarını dışa aktar.
+Yöntemi ve kaynak kapsamının sınırlarını gör.
+
+Yapay zekâ hata yapabilir. Alıntıları ve sonuçları asıl makaleyle doğrula. MedLit hakem değerlendirmesinin, uzmanlığın veya klinik yargının yerini almaz. Analiz için desteklenen kendi sağlayıcını bağlarsın; sağlayıcı kullanımı ayrıca ücretlendirilebilir.
+
+Uygulama arayüzü şu anda İngilizcedir.

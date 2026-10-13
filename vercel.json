@@ -1,8 +1,24 @@
 {
-  "buildCommand": "npx expo export --platform web",
+  "installCommand": "npm ci",
+  "buildCommand": "EXPO_NO_DOTENV=1 EXPO_PUBLIC_SITE_URL=https://medlit-evidence-appraisal.vercel.app ./node_modules/.bin/expo export --platform web && node scripts/check-web-security.mjs",
   "outputDirectory": "dist",
   "framework": null,
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "functions": {
+    "api/fetch.ts": { "maxDuration": 30 },
+    "api/ingest.ts": { "maxDuration": 60 },
+    "api/health.ts": { "maxDuration": 10 }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8=' 'sha256-oJCZGMw/nzWqqMtBT3O9smUrb+3V+VeD6xBVEur8e6Y=' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://avrqcmousghdyfpaqaye.supabase.co https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://api.anthropic.com https://api.openai.com https://openrouter.ai https://us.i.posthog.com https://eu.i.posthog.com https://generativelanguage.googleapis.com https://api.crossref.org https://api.unpaywall.org https://*.ncbi.nlm.nih.gov https://*.ebi.ac.uk; frame-src https://*.firebaseapp.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" }
+      ]
+    }
   ]
 }

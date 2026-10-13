@@ -6,6 +6,7 @@
 
 import {
   createUserWithEmailAndPassword,
+  getAdditionalUserInfo,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
@@ -15,11 +16,18 @@ import {
   deleteUser,
   EmailAuthProvider,
   reauthenticateWithCredential,
+  reauthenticateWithPopup,
   type User,
   type Unsubscribe,
 } from 'firebase/auth';
 import { doc, setDoc, deleteDoc, collection, getDocs, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { Platform } from 'react-native';
 import { getAuth, getDB } from './firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { libraryKey } from './libraryStorage';
+import { captureEvent } from './productAnalytics';
+import {socialSignIn,socialReauthenticate} from './socialAuth';
+import { configuredAccountProviders } from './accountProviderAvailability';
 
 /** Create or update user profile document in Firestore */
 async function upsertUserProfile(user: User, isNewUser = false): Promise<void> {
@@ -48,7 +56,8 @@ export async function signUpWithEmail(email: string, password: string): Promise<
   const auth = getAuth();
   if (!auth) throw new Error('Firebase not configured');
   const credential = await createUserWithEmailAndPassword(auth, email, password);
-  await upsertUserProfile(credential.user, true);
+  void captureEvent('account_created');
+  await upsertUserProfile(credential.user, getAdditionalUserInfo(credential)?.isNewUser === true);
   return credential.user;
 }
 
@@ -60,15 +69,15 @@ export async function signInWithEmail(email: string, password: string): Promise<
   return credential.user;
 }
 
-export async function signInWithGoogle(): Promise<User> {
-  const auth = getAuth();
-  if (!auth) throw new Error('Firebase not configured');
-  const provider = new GoogleAuthProvider();
-  const credential = await signInWithPopup(auth, provider);
-  // For Google sign-in, first sign-in acts as sign-up too
-  await upsertUserProfile(credential.user, true);
-  return credential.user;
+async function signInWithSocial(kind:'google'|'apple'):Promise<User>{
+ const auth=getAuth();if(!auth)throw new Error('Account services are not configured.');
+ if(!configuredAccountProviders(true,Platform.OS)[kind])throw Object.assign(new Error('This sign-in provider is not enabled in this build.'),{code:'auth/operation-not-allowed'});
+ const credential=await socialSignIn(auth,kind);
+ if(getAdditionalUserInfo(credential)?.isNewUser)void captureEvent('account_created');
+ await upsertUserProfile(credential.user,getAdditionalUserInfo(credential)?.isNewUser===true);return credential.user;
 }
+export const signInWithGoogle=()=>signInWithSocial('google');
+export const signInWithApple=()=>signInWithSocial('apple');
 
 export async function signOut(): Promise<void> {
   const auth = getAuth();
@@ -88,29 +97,35 @@ export async function deleteAccount(password?: string): Promise<void> {
 
   const user = auth.currentUser;
 
-  // Re-authenticate if email/password user
-  if (password && user.email) {
+  const providerId = user.providerData[0]?.providerId;
+  let revoke=async()=>{};
+  if (providerId === 'password' && user.email) {
+    if (!password) throw new Error('Enter your password to confirm account deletion.');
     const credential = EmailAuthProvider.credential(user.email, password);
     await reauthenticateWithCredential(user, credential);
-  }
+  } else if (providerId === 'google.com' || providerId === 'apple.com') {
+    revoke=await socialReauthenticate(auth,user,providerId==='apple.com'?'apple':'google');
+  } else throw new Error('This sign-in method cannot confirm deletion yet.');
+  if(auth.currentUser?.uid!==user.uid)throw new Error('The account changed. Please try again.');
 
-  // Delete user data from Firestore
+  // Delete every known user-owned subcollection before removing the profile.
+  // Firestore does not cascade subcollection deletion when a parent is deleted.
   const db = getDB();
   if (db) {
-    try {
-      const historyCol = collection(db, 'users', user.uid, 'history');
-      const historyDocs = await getDocs(historyCol);
-      if (historyDocs.size > 0) {
+    for (const collectionName of ['analyses', 'history', 'settings']) {
+      const snapshot = await getDocs(collection(db, 'users', user.uid, collectionName));
+      for (let start = 0; start < snapshot.docs.length; start += 400) {
         const batch = writeBatch(db);
-        historyDocs.docs.forEach((d) => batch.delete(d.ref));
+        snapshot.docs.slice(start, start + 400).forEach((item) => batch.delete(item.ref));
         await batch.commit();
       }
-      await deleteDoc(doc(db, 'users', user.uid));
-    } catch {
-      // Continue with account deletion even if data cleanup fails
     }
+    await deleteDoc(doc(db, 'users', user.uid));
   }
 
+  // Remove this account's device cache, not another account's or guest work.
+  await AsyncStorage.removeItem(libraryKey(user.uid));
+  await revoke();
   await deleteUser(user);
 }
 

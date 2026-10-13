@@ -21,6 +21,9 @@ import { Colors, getScoreColor } from '../src/constants/colors';
 import { useAuth } from '../src/hooks/useAuth';
 import { useHistory } from '../src/hooks/useHistory';
 import { useBadges } from '../src/hooks/useBadges';
+import { WorkspaceHeader } from '../src/components/WorkspaceHeader';
+import { shareText } from '../src/utils/shareText';
+import { PageMeta } from '../src/components/PageMeta';
 
 export default function ProfileScreen() {
   const { user, signOut, deleteAccount } = useAuth();
@@ -34,6 +37,8 @@ export default function ProfileScreen() {
 
   if (!user) {
     return (
+      <>
+      <PageMeta title="Profile — MedLit" description="Your private MedLit profile and library statistics." path="/profile" noIndex />
       <SafeAreaView style={styles.safe} edges={['bottom']}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile</Text>
@@ -44,7 +49,7 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.emptyTitle}>Not signed in</Text>
           <Text style={styles.emptyBody}>
-            Sign in to track your progress, earn badges, and sync across devices.
+            An optional account can sync your library when cloud accounts are enabled. Guest appraisals remain available in your device’s Library.
           </Text>
           <TouchableOpacity
             style={styles.signInBtn}
@@ -64,24 +69,30 @@ export default function ProfileScreen() {
         </View>
         <NavBar active="profile" user={user} />
       </SafeAreaView>
+      </>
     );
   }
 
   // Compute stats
   const totalAnalyses = history.length;
-  const avgAccuracy = totalAnalyses > 0
-    ? (history.reduce((s, h) => s + h.accuracyScore, 0) / totalAnalyses).toFixed(1)
+  const avgConfidence = totalAnalyses > 0
+    ? (history.reduce((s, h) => s + h.evidenceScore, 0) / totalAnalyses).toFixed(1)
     : '—';
   const avgBias = totalAnalyses > 0
-    ? (history.reduce((s, h) => s + h.biasScore, 0) / totalAnalyses).toFixed(1)
+    ? (history.reduce((s, h) => s + h.biasConcernScore, 0) / totalAnalyses).toFixed(1)
     : '—';
-  const trustworthyCount = history.filter((h) => h.trustworthy).length;
-  const isGoogleUser = user.providerData?.[0]?.providerId === 'google.com';
+  const fullTextCount = history.filter((h) => h.coverageLevel === 'full_text').length;
+  const providerId=user.providerData?.[0]?.providerId;
+  const isGoogleUser=providerId==='google.com',isAppleUser=providerId==='apple.com',isPasswordUser=providerId==='password';
   const memberSince = user.metadata?.creationTime
     ? new Date(user.metadata.creationTime).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     : '';
 
   const handleSignOut = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Sign out of MedLit? Your AI connection will also be cleared.')) void signOut().then(() => router.replace('/')).catch(() => window.alert('Sign-out failed. Please try again.'));
+      return;
+    }
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -97,13 +108,14 @@ export default function ProfileScreen() {
   const handleDeleteAccount = async () => {
     setDeleting(true);
     try {
-      await deleteAccount(isGoogleUser ? undefined : deletePassword || undefined);
+      await deleteAccount(isPasswordUser ? deletePassword || undefined : undefined);
       setDeleteModalVisible(false);
-      Alert.alert('Account Deleted', 'Your account and all data have been permanently removed.');
+      if (Platform.OS === 'web') window.alert('Your account, saved cloud reports, and this account’s device cache were deleted. Guest copies and external exports are separate.');
+      else Alert.alert('Account deleted', 'Your account and its saved reports were deleted. Guest copies and external exports are separate.');
       router.replace('/');
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to delete account.';
-      Alert.alert('Error', msg);
+      if (Platform.OS === 'web') window.alert(msg); else Alert.alert('Error', msg);
     } finally {
       setDeleting(false);
     }
@@ -113,15 +125,17 @@ export default function ProfileScreen() {
     const text = [
       `My MedLit Stats`,
       `Papers analyzed: ${totalAnalyses}`,
-      `Avg accuracy found: ${avgAccuracy}/10`,
+      `Average appraisal confidence signal: ${avgConfidence}/10`,
       `Badges earned: ${earned}/${total}`,
       ``,
       `Analyze scientific papers with MedLit!`,
     ].join('\n');
-    await Share.share({ message: text });
+    await shareText(text, 'medlit-reading-stats.txt');
   };
 
   return (
+    <>
+    <PageMeta title="Profile — MedLit" description="Your private MedLit profile and library statistics." path="/profile" noIndex />
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
@@ -146,12 +160,12 @@ export default function ProfileScreen() {
           <Text style={styles.profileEmail}>{user.email}</Text>
           <View style={styles.providerBadge}>
             <Ionicons
-              name={isGoogleUser ? 'logo-google' : 'mail-outline'}
+              name={isGoogleUser ? 'logo-google' : isAppleUser ? 'logo-apple' : 'mail-outline'}
               size={12}
               color="rgba(255,255,255,0.8)"
             />
             <Text style={styles.providerText}>
-              {isGoogleUser ? 'Google' : 'Email'} {memberSince ? `· Since ${memberSince}` : ''}
+              {isGoogleUser ? 'Google' : isAppleUser ? 'Apple' : 'Email'} {memberSince ? `· Since ${memberSince}` : ''}
             </Text>
           </View>
         </LinearGradient>
@@ -163,16 +177,16 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Papers</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={[styles.statNumber, { color: Colors.accent }]}>{avgAccuracy}</Text>
-            <Text style={styles.statLabel}>Avg Accuracy</Text>
+            <Text style={[styles.statNumber, { color: Colors.accent }]}>{avgConfidence}</Text>
+            <Text style={styles.statLabel}>Avg Appraisal</Text>
           </View>
           <View style={styles.statBox}>
             <Text style={[styles.statNumber, { color: Colors.science }]}>{avgBias}</Text>
-            <Text style={styles.statLabel}>Avg Bias-Free</Text>
+            <Text style={styles.statLabel}>Bias Domains</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={[styles.statNumber, { color: Colors.success }]}>{trustworthyCount}</Text>
-            <Text style={styles.statLabel}>Trustworthy</Text>
+            <Text style={[styles.statNumber, { color: Colors.success }]}>{fullTextCount}</Text>
+            <Text style={styles.statLabel}>Full Text</Text>
           </View>
         </View>
 
@@ -278,6 +292,7 @@ export default function ProfileScreen() {
         <TouchableOpacity
           style={styles.dangerBtn}
           onPress={() => {
+            if (Platform.OS === 'web') { setDeletePassword(''); setDeleteModalVisible(true); return; }
             Alert.alert(
               'Delete Account',
               'This will permanently delete your account, all analyses, and all data. This cannot be undone.',
@@ -319,11 +334,11 @@ export default function ProfileScreen() {
               </View>
               <Text style={styles.modalTitle}>Delete Account</Text>
               <Text style={styles.modalSubtitle}>
-                This action is permanent and cannot be undone. All your data will be erased.
+                This permanently deletes your account and its saved reports. Guest copies and exported files are separate; export anything you need first.
               </Text>
             </View>
 
-            {!isGoogleUser && (
+            {isPasswordUser && (
               <>
                 <Text style={styles.modalLabel}>Confirm your password</Text>
                 <TextInput
@@ -366,6 +381,7 @@ export default function ProfileScreen() {
 
       <NavBar active="profile" user={user} />
     </SafeAreaView>
+    </>
   );
 }
 

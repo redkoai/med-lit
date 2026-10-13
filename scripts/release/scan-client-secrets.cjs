@@ -1,0 +1,6 @@
+const fs=require('node:fs'),path=require('node:path');
+const roots=process.argv.slice(2);if(!roots.length)throw new Error('Pass the exact public or mobile bundle directory to scan.');
+const violations=[];let scanned=0;
+const patterns=[/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,/\bsk-(?:ant-|proj-)[A-Za-z0-9_-]{20,}/,/\b(?:service_role|client_secret|private_key)\s*["']?\s*[:=]\s*["'][A-Za-z0-9_\-/.+]{20,}/];
+function walk(file){const stat=fs.statSync(file);if(stat.isDirectory()){for(const name of fs.readdirSync(file))walk(path.join(file,name));return;}if(!/\.(?:js|json|html|css|bundle|jsbundle|hbc|txt|map)$/i.test(file))return;const text=fs.readFileSync(file,'utf8');scanned++;if(patterns.some(pattern=>pattern.test(text)))violations.push(file);for(const token of text.match(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g)||[]){try{const claims=JSON.parse(Buffer.from(token.split('.')[1],'base64url'));if(claims.role==='service_role')violations.push(file);}catch{}}}
+roots.forEach(walk);if(violations.length){console.error('Possible private credentials in: '+[...new Set(violations)].join(', '));process.exit(1);}console.log(`Scanned ${scanned} bundle/text files: no private-key signatures, provider secrets or service-role JWTs found. This is a bounded scan, not proof that all secrets are absent.`);

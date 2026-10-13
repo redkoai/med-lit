@@ -11,9 +11,9 @@ interface Props {
 }
 
 const STATUS_CONFIG: Record<RefCheckStatus, { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string; label: string }> = {
-  PASS: { icon: 'checkmark-circle', color: Colors.success, bg: Colors.successLight, label: 'References OK' },
-  WARN: { icon: 'warning', color: Colors.warning, bg: Colors.warningLight, label: 'Minor Issues' },
-  FAIL: { icon: 'close-circle', color: Colors.danger, bg: Colors.dangerLight, label: 'Issues Found' },
+  RESOLVED: { icon: 'checkmark-circle', color: Colors.success, bg: Colors.successLight, label: 'Identifiers resolved' },
+  PARTIAL: { icon: 'warning', color: Colors.warning, bg: Colors.warningLight, label: 'Partially checked' },
+  NOT_ASSESSED: { icon: 'remove-circle-outline', color: Colors.textSecondary, bg: Colors.borderLight, label: 'Not assessed' },
 };
 
 export function ReferencesSection({ referenceCheck }: Props) {
@@ -34,14 +34,15 @@ export function ReferencesSection({ referenceCheck }: Props) {
           <Text style={[styles.statusLabel, { color: config.color }]}>{config.label}</Text>
           {referenceCheck.totalReferences > 0 ? (
             <Text style={styles.refCount}>
-              {referenceCheck.totalReferences} references found
-              {referenceCheck.selfCitationRate != null
-                ? ` · ${Math.round(referenceCheck.selfCitationRate * 100)}% self-citations`
-                : ''}
+              {referenceCheck.totalReferences} references parsed · {referenceCheck.resolvedIdentifiers} identifiers resolved
             </Text>
           ) : null}
         </View>
       </View>
+
+      <Text style={styles.scopeNote}>
+        Identifier resolution does not verify that a citation supports a particular claim. Retraction checks are limited to notices exposed by the queried indexes.
+      </Text>
 
       {/* Issues */}
       {referenceCheck.issues.length > 0 ? (
@@ -95,6 +96,12 @@ const styles = StyleSheet.create({
   block: {
     marginTop: 10,
     gap: 6,
+  },
+  scopeNote: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: Colors.textSecondary,
+    marginBottom: 8,
   },
   blockTitle: {
     fontSize: 12,

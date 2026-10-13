@@ -19,8 +19,8 @@ const BADGE_DEFS: Omit<Badge, 'earned' | 'progress' | 'current'>[] = [
   { id: 'ten_analyses', name: 'Literature Pro', description: 'Analyze 10 papers', icon: 'school-outline', color: '#10B981', target: 10 },
   { id: 'twenty_five', name: 'Research Machine', description: 'Analyze 25 papers', icon: 'hardware-chip-outline', color: '#F59E0B', target: 25 },
   { id: 'fifty_analyses', name: 'Scholar Elite', description: 'Analyze 50 papers', icon: 'trophy-outline', color: '#EF4444', target: 50 },
-  { id: 'high_accuracy', name: 'Sharp Eye', description: 'Find a paper scoring 9+ accuracy', icon: 'eye-outline', color: '#059669', target: 1 },
-  { id: 'low_bias', name: 'Bias Hunter', description: 'Find a paper with high bias risk', icon: 'warning-outline', color: '#DC2626', target: 1 },
+  { id: 'full_text', name: 'Source Reader', description: 'Appraise a paper using available full text', icon: 'document-text-outline', color: '#059669', target: 1 },
+  { id: 'organizer', name: 'Organizer', description: 'Add a paper to a collection or tag it', icon: 'folder-open-outline', color: '#7C3AED', target: 1 },
   { id: 'rct_reader', name: 'Gold Standard', description: 'Analyze a Randomized Controlled Trial', icon: 'medal-outline', color: '#D97706', target: 1 },
   { id: 'meta_reader', name: 'Big Picture', description: 'Analyze a Systematic Review / Meta-Analysis', icon: 'layers-outline', color: '#2563EB', target: 1 },
   { id: 'streak_3', name: 'On a Roll', description: 'Analyze papers on 3 different days', icon: 'flame-outline', color: '#F97316', target: 3 },
@@ -29,8 +29,8 @@ const BADGE_DEFS: Omit<Badge, 'earned' | 'progress' | 'current'>[] = [
 export function useBadges(history: HistoryEntry[]): { badges: Badge[]; earned: number; total: number } {
   return useMemo(() => {
     const count = history.length;
-    const highAccuracy = history.some((h) => h.accuracyScore >= 9);
-    const highBias = history.some((h) => h.biasScore <= 3);
+    const hasFullText = history.some((h) => h.coverageLevel === 'full_text');
+    const hasOrganized = history.some((h) => h.collection || h.tags?.length);
     const hasRCT = history.some((h) => h.studyDesign?.includes('Randomized'));
     const hasMeta = history.some((h) => h.studyDesign?.includes('Systematic') || h.studyDesign?.includes('Meta'));
 
@@ -43,8 +43,8 @@ export function useBadges(history: HistoryEntry[]): { badges: Badge[]; earned: n
         case 'ten_analyses': return Math.min(count, 10);
         case 'twenty_five': return Math.min(count, 25);
         case 'fifty_analyses': return Math.min(count, 50);
-        case 'high_accuracy': return highAccuracy ? 1 : 0;
-        case 'low_bias': return highBias ? 1 : 0;
+        case 'full_text': return hasFullText ? 1 : 0;
+        case 'organizer': return hasOrganized ? 1 : 0;
         case 'rct_reader': return hasRCT ? 1 : 0;
         case 'meta_reader': return hasMeta ? 1 : 0;
         case 'streak_3': return Math.min(uniqueDays, 3);
