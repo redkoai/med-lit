@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, Platform } from "react-native";
 import { Link, router } from "expo-router";
 import { Colors as C } from "../constants/colors";
 import { MotionPress } from "./WorkspaceMotion";
@@ -14,7 +14,7 @@ export function WorkspaceFooter() {
           ["Privacy", "/privacy"],
           ["Terms", "/terms"],
         ].map(([label, path]) => (
-          <Link key={path} href={path as never} style={s.note}>{label}</Link>
+          Platform.OS === "web" && path.includes("#") ? <Text key={path} style={s.note}><a href={path} style={{color:"inherit",textDecoration:"none"}}>{label}</a></Text> : <Link key={path} href={path as never} style={s.note}>{label}</Link>
         ))}
       </View>
     </View>

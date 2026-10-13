@@ -332,7 +332,7 @@ export function TerminalWorkspace(p: Props) {
           <small>Scientific judgment stays with you.</small>
         </p>
         <nav aria-label="Footer navigation">
-          <Anchor href="/about#redko">About Redko</Anchor>
+          <a href="/about#redko">About Redko</a>
           <Anchor href="/guides">Guides</Anchor>
           <Anchor href="/privacy">Privacy</Anchor>
           <Anchor href="/terms">Terms</Anchor>
