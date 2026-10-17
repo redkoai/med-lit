@@ -787,7 +787,7 @@
   gap: 24px;
   flex-wrap: wrap;
 }
-.ml-brand {
+.ml-header .ml-brand {
   display: flex;
   align-items: center;
   gap: 9px;
