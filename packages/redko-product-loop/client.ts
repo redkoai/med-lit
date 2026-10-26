@@ -78,6 +78,13 @@ export function createClient(options:Options){
   }
   localStorage.removeItem(base+'identity');localStorage.removeItem(base+'previous');identity=null;notify();
  }
+ // Record the current coarse surface when consent is granted, without replaying pre-consent navigation.
+ function observeView(surface:LoopEvent['surface']){
+  init();let previous=allowed;
+  const changed=()=>{const next=allowed;const granted=next&&!previous;previous=next;if(granted)record('view',surface,'surface');};
+  listeners.add(changed);if(allowed)record('view',surface,'surface');
+  return()=>{listeners.delete(changed);};
+ }
  function observe(root:HTMLElement){
   init();
   const click=(event:MouseEvent)=>{
@@ -92,5 +99,5 @@ export function createClient(options:Options){
   // React Native Web may stop bubbling. Observe only allowlisted targets in capture phase.
   root.addEventListener('click',click,{capture:true,passive:true});return()=>root.removeEventListener('click',click,true);
  }
- return {init,record,flush,setConsent,erase,observe,subscribe:(fn:()=>void)=>{listeners.add(fn);return()=>{listeners.delete(fn);};},get enabled(){return allowed;},get configured(){return supported();},get delivery(){return delivery;},get receipt(){if(typeof window==='undefined')return null;try{return JSON.parse(localStorage.getItem(base+'consent')??'null');}catch{return null;}}};
+ return {init,record,flush,setConsent,erase,observe,observeView,subscribe:(fn:()=>void)=>{listeners.add(fn);return()=>{listeners.delete(fn);};},get enabled(){return allowed;},get configured(){return supported();},get delivery(){return delivery;},get receipt(){if(typeof window==='undefined')return null;try{return JSON.parse(localStorage.getItem(base+'consent')??'null');}catch{return null;}}};
 }

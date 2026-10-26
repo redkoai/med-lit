@@ -1,4 +1,4 @@
-const PRODUCTION_ORIGIN = 'https://medlit-evidence-appraisal.vercel.app';
+const PRODUCTION_ORIGIN = 'https://medlit.theredko.com';
 const configured = (process.env.EXPO_PUBLIC_SITE_URL || '').replace(/\/$/, '');
 
 /** Canonical/public links must never inherit a localhost value from developer dotenv files. */

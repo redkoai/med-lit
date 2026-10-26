@@ -44,4 +44,4 @@ For each point, record the source page, table or passage.
 - Corrections and unresolved disagreements:
 - Follow-up reading:
 
-Prepared with MedLit: https://medlit-evidence-appraisal.vercel.app
+Prepared with MedLit: https://medlit.theredko.com

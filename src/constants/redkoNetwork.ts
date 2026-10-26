@@ -9,19 +9,19 @@ export const REDKO_NETWORK = [
   {
     "id": "labs",
     "name": "Redko Labs",
-    "url": "https://redko-website-preview.vercel.app/RedkoLabs",
+    "url": "https://www.theredko.com/RedkoLabs",
     "description": "An incubator for founders working in impact AI and deep tech."
   },
   {
     "id": "medlit",
     "name": "MedLit",
-    "url": "https://medlit-evidence-appraisal.vercel.app/about",
+    "url": "https://medlit.theredko.com/about",
     "description": "Read research critically and inspect the evidence behind an appraisal."
   },
   {
     "id": "synaptik",
     "name": "Synaptik",
-    "url": "https://synaptik-beta.vercel.app/about",
+    "url": "https://synaptik.theredko.com/about",
     "description": "Research-informed cognitive practice and everyday wellbeing activities."
   },
   {

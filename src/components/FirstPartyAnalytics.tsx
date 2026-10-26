@@ -10,7 +10,7 @@ const surfaces:Record<string,LoopEvent['surface']>={'/':'home','/analysis':'anal
 export function ProductLoopObserver(){
  const path=usePathname();
  useEffect(()=>{if(Platform.OS!=='web')return;productLoop.init();return productLoop.observe(document.body);},[]);
- useEffect(()=>{if(Platform.OS!=='web')return;const surface=surfaces[path];if(!surface){delete document.body.dataset.loopSurface;return;}document.body.dataset.loopSurface=surface;productLoop.record('view',surface,'surface');},[path]);
+ useEffect(()=>{if(Platform.OS!=='web')return;const surface=surfaces[path];if(!surface){delete document.body.dataset.loopSurface;return;}document.body.dataset.loopSurface=surface;return productLoop.observeView(surface);},[path]);
  return null;
 }
 export function FirstPartyAnalyticsPreferences(){
