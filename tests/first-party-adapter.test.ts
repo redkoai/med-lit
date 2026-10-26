@@ -12,9 +12,9 @@ test('MedLit maps real appraisal events without forwarding paper data or duplica
   const {productLoop}=await import('../src/services/firstPartyAnalytics');
   const {captureEvent,setAnalyticsConsent}=await import('../src/services/productAnalytics');
   productLoop.init();await captureEvent('appraisal_started',{paper:'PRIVATE PAPER',key:'PRIVATE KEY'});assert.equal(requests.length,0);
-  productLoop.setConsent(true);await captureEvent('appraisal_started',{paper:'PRIVATE PAPER',key:'PRIVATE KEY'});await captureEvent('appraisal_completed',{doi:'PRIVATE DOI'});await captureEvent('report_opened',{url:'PRIVATE URL'});await productLoop.flush();
+  productLoop.setConsent(true);await captureEvent('appraisal_started',{paper:'PRIVATE PAPER',key:'PRIVATE KEY'});await captureEvent('appraisal_completed',{doi:'PRIVATE DOI'});await captureEvent('report_opened',{url:'PRIVATE URL'});await captureEvent('source_packet_prepared',{paper:'PRIVATE PAPER',provider:'handoff'});await productLoop.flush();
   assert.equal(requests.length,1);assert.ok(requests[0].url.endsWith('collect_product_loop'));const batch=requests[0].body.batch;
-  assert.deepEqual(batch.map((e:any)=>e.event),['flow_started','flow_completed']);assert.ok(batch.every((e:any)=>e.product==='medlit'));assert.doesNotMatch(JSON.stringify(requests),/PRIVATE/);
+  assert.deepEqual(batch.map((e:any)=>e.event),['flow_started','flow_completed','click']);assert.ok(batch.every((e:any)=>e.product==='medlit'));assert.doesNotMatch(JSON.stringify(requests),/PRIVATE/);
   setAnalyticsConsent(true);assert.equal(productLoop.enabled,false);await captureEvent('appraisal_failed',{key:'PRIVATE KEY'});assert.equal(requests.length,2);assert.ok(requests[1].url.startsWith('https://us.i.posthog.com'));
   setAnalyticsConsent(false);
  }finally{for(const [key,d]of Object.entries(originals))d?Object.defineProperty(globalThis,key,d):Reflect.deleteProperty(globalThis,key);}
