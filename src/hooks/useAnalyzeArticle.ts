@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { router } from 'expo-router';
+import { providerFailureReason } from '../services/providerTransport';
 import { captureEvent } from '../services/productAnalytics';
 import { cacheCurrentAnalysis, getIdentityRevision } from '../services/currentAnalysis';
 import type { FetchState, ArticleAnalysis, AppSettings } from '../types';
@@ -77,7 +78,7 @@ export function useAnalyzeArticle({
         setFetchState({ status: 'idle', message: '', progress: 0 });
       }, 600);
     } catch (error) {
-      void captureEvent('appraisal_failed', { provider: settings.aiProvider });
+      void captureEvent('appraisal_failed', { provider: settings.aiProvider, reason: providerFailureReason(error) });
       const msg = error instanceof Error ? error.message : 'Unknown error';
       setFetchState({
         status: 'error',

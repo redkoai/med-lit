@@ -20,7 +20,7 @@ export default function ConnectScreen() {
     void (async () => {
       const result = await finishOpenRouterLogin(callback, window.location.origin, window.sessionStorage);
       await saveSettings({ aiProvider: 'openrouter', openRouterApiKey: result.key });
-      void captureEvent('ai_connected', { provider: 'openrouter' });
+      void captureEvent('ai_authorized', { provider: 'openrouter' });
       // Connecting never starts a billed generation automatically.
       router.replace({ pathname: '/', params: { url: result.article, connected: 'openrouter' } });
     })().catch(err => setError(err instanceof Error ? err.message : 'Please start a new connection.'));

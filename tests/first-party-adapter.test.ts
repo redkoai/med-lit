@@ -15,7 +15,10 @@ test('MedLit maps real appraisal events without forwarding paper data or duplica
   productLoop.setConsent(true);await captureEvent('appraisal_started',{paper:'PRIVATE PAPER',key:'PRIVATE KEY'});await captureEvent('appraisal_completed',{doi:'PRIVATE DOI'});await captureEvent('report_opened',{url:'PRIVATE URL'});await captureEvent('source_packet_prepared',{paper:'PRIVATE PAPER',provider:'handoff'});await productLoop.flush();
   assert.equal(requests.length,1);assert.ok(requests[0].url.endsWith('collect_product_loop'));const batch=requests[0].body.batch;
   assert.deepEqual(batch.map((e:any)=>e.event),['flow_started','flow_completed','click']);assert.ok(batch.every((e:any)=>e.product==='medlit'));assert.doesNotMatch(JSON.stringify(requests),/PRIVATE/);
-  setAnalyticsConsent(true);assert.equal(productLoop.enabled,false);await captureEvent('appraisal_failed',{key:'PRIVATE KEY'});assert.equal(requests.length,2);assert.ok(requests[1].url.startsWith('https://us.i.posthog.com'));
+  await captureEvent('ai_connection_started',{provider:'openai',key:'PRIVATE KEY'});await captureEvent('ai_connected',{provider:'openai'});await captureEvent('ai_connection_failed',{provider:'claude',reason:'billing',message:'PRIVATE ERROR'});await captureEvent('appraisal_saved',{destination:'device'});await captureEvent('saved_report_opened');await productLoop.flush();
+  assert.deepEqual(requests[1].body.batch.map((e:any)=>e.target),['connect-ai','connect-ai','connect-ai','save-device','open-saved-analysis']);
+  assert.equal(requests[1].body.batch[2].reason,'billing');assert.doesNotMatch(JSON.stringify(requests),/PRIVATE/);
+  setAnalyticsConsent(true);assert.equal(productLoop.enabled,false);await captureEvent('appraisal_failed',{key:'PRIVATE KEY'});assert.equal(requests.length,3);assert.ok(requests[2].url.startsWith('https://us.i.posthog.com'));
   setAnalyticsConsent(false);
  }finally{for(const [key,d]of Object.entries(originals))d?Object.defineProperty(globalThis,key,d):Reflect.deleteProperty(globalThis,key);}
 });

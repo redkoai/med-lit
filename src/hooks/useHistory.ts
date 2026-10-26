@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { captureEvent } from '../services/productAnalytics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, setDoc, writeBatch } from 'firebase/firestore';
 import { getDB } from '../services/firebase';
@@ -48,8 +49,10 @@ export function useHistory(uid?: string | null) {
     if (!uid || !db) return;
     try {
       await setDoc(doc(db, 'users', uid, 'analyses', analysis.id), JSON.parse(JSON.stringify(analysis)));
+      void captureEvent('appraisal_saved', { destination: 'cloud' });
       setState(previous => previous.owner === owner ? { ...previous, message: 'Latest appraisal saved to your account.' } : previous);
     } catch {
+      void captureEvent('appraisal_save_failed', { destination: 'cloud', reason: 'storage' });
       setState(previous => previous.owner === owner ? { ...previous, message: 'Saved on this device. Cloud sync failed; use Sync device changes to retry.' } : previous);
       throw new Error('Cloud sync failed. Your device copy is safe.');
     }
@@ -57,10 +60,15 @@ export function useHistory(uid?: string | null) {
 
   const saveToHistory = useCallback(async (analysis: ArticleAnalysis) => {
     let persisted = analysis;
-    const next = await updateLibrary(AsyncStorage, uid, items => {
+    let next: ArticleAnalysis[];
+    try { next = await updateLibrary(AsyncStorage, uid, items => {
       persisted = { ...analysis, revision: Math.max(0, ...items.filter(item => item.articleKey === analysis.articleKey).map(item => item.revision ?? 0)) + 1 };
       return [persisted, ...items.filter(item => item.id !== analysis.id)];
-    });
+    }); } catch (error) {
+      void captureEvent('appraisal_save_failed', { destination: 'device', reason: 'storage' });
+      throw error;
+    }
+    void captureEvent('appraisal_saved', { destination: 'device' });
     publish(next);
     try { await syncOne(persisted); } catch { /* Return the device copy after a paid generation. */ }
     return persisted;

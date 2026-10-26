@@ -230,7 +230,7 @@ export default function HomeScreen() {
                     <Text style={s.quiet}>
                       {connected
                         ? "Your provider’s billing applies. Ready when you are."
-                        : "A guided API-key connection, saved securely on this device."}
+                        : "Your provider key stays in this device’s secure storage."}
                     </Text>
                   </View>
                   <Pressable

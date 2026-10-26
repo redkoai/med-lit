@@ -5,15 +5,19 @@ export const SOURCES=['direct','google','bing','chatgpt','perplexity','gemini','
 export type AcquisitionSource=typeof SOURCES[number];
 export const PRODUCTS=['synaptik','medlit'] as const;
 export type Product=typeof PRODUCTS[number];
-export const EVENTS=['view','click','flow_started','flow_completed','flow_failed','feedback','scroll_depth'] as const;
+export const PROVIDERS=['openai','claude','gemini','openrouter','handoff'] as const;
+export const REASONS=['credentials','permission','billing','rate_limit','model','network','timeout','provider','output','storage','unknown'] as const;
+export const EVENTS=['step_started','step_completed','step_failed','view','click','flow_started','flow_completed','flow_failed','feedback','scroll_depth'] as const;
 export const SURFACES=['landing','home','discovery','practice','journal','settings','search','analysis','library','sharing','help','legal'] as const;
-export const TARGETS=['surface','open-discovery','open-practice','preview-practice','save-practice','share-practice','export-summary','filter-control','search-control','start-session','finish-session','stop-session','save-checkin','auth-submit','save-preferences','open-settings','open-help','open-legal','submit-search','fetch-source','start-analysis','save-analysis','export-analysis','import-papers','open-library','share-analysis','feedback-navigation','feedback-clarity','feedback-reliability'] as const;
-export type LoopEvent={id:string;product:Product;visitor:string;session:string;version:typeof LOOP_VERSION|typeof LEGACY_LOOP_VERSION;source?:AcquisitionSource;entry?:typeof SURFACES[number];environment:'production'|'preview'|'test';event:typeof EVENTS[number];surface:typeof SURFACES[number];target:typeof TARGETS[number];at:string;value?:number;x?:number;y?:number;viewport?:'small'|'medium'|'large'};
+export const TARGETS=['authorize-ai','connect-ai','save-device','save-cloud','open-saved-analysis','surface','open-discovery','open-practice','preview-practice','save-practice','share-practice','export-summary','filter-control','search-control','start-session','finish-session','stop-session','save-checkin','auth-submit','save-preferences','open-settings','open-help','open-legal','submit-search','fetch-source','start-analysis','save-analysis','export-analysis','import-papers','open-library','share-analysis','feedback-navigation','feedback-clarity','feedback-reliability'] as const;
+export type LoopEvent={id:string;product:Product;visitor:string;session:string;version:typeof LOOP_VERSION|typeof LEGACY_LOOP_VERSION;source?:AcquisitionSource;provider?:typeof PROVIDERS[number];reason?:typeof REASONS[number];entry?:typeof SURFACES[number];environment:'production'|'preview'|'test';event:typeof EVENTS[number];surface:typeof SURFACES[number];target:typeof TARGETS[number];at:string;value?:number;x?:number;y?:number;viewport?:'small'|'medium'|'large'};
 const uuid=(v:unknown)=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
-const keys=new Set(['id','product','visitor','session','version','environment','event','surface','target','at','value','x','y','viewport','source','entry']);
+const keys=new Set(['id','product','visitor','session','version','environment','event','surface','target','at','value','x','y','viewport','source','entry','provider','reason']);
 export function validateEvent(value:unknown):value is LoopEvent{
  if(!value||typeof value!=='object'||Array.isArray(value))return false;const e=value as LoopEvent;
  if(Object.keys(e).some(k=>!keys.has(k))||!uuid(e.id)||!uuid(e.visitor)||!uuid(e.session)||![LOOP_VERSION,LEGACY_LOOP_VERSION].includes(e.version)||!PRODUCTS.includes(e.product)||!EVENTS.includes(e.event)||!SURFACES.includes(e.surface)||!TARGETS.includes(e.target)||!['production','preview','test'].includes(e.environment)||typeof e.at!=='string'||!Number.isFinite(Date.parse(e.at)))return false;
+ if(e.provider!==undefined&&(!PROVIDERS.includes(e.provider)||e.product!=='medlit'))return false;
+ if(e.reason!==undefined&&!REASONS.includes(e.reason))return false;
  if(e.source!==undefined&&!SOURCES.includes(e.source))return false;
  if(e.entry!==undefined&&!SURFACES.includes(e.entry))return false;
  if(e.value!==undefined&&(!Number.isFinite(e.value)||e.value<0||e.value>600000))return false;

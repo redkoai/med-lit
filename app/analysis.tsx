@@ -17,7 +17,7 @@ import { PageMeta } from '../src/components/PageMeta';
 export default function AnalysisScreen() {
   const params = useLocalSearchParams<{ id?: string; saveWarning?: string }>();
   const { user } = useAuth();
-  const { getAnalysis, updateAnalysisMetadata, addJudgmentFeedback } = useHistory(user?.uid ?? null);
+  const { getAnalysis, updateAnalysisMetadata, addJudgmentFeedback, storageMessage } = useHistory(user?.uid ?? null);
   const [analysis, setAnalysis] = useState<ArticleAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [exportMenuVisible, setExportMenuVisible] = useState(false);
@@ -38,10 +38,11 @@ export default function AnalysisScreen() {
     setAnalysis(null); setLoading(true);
     (async () => {
       const id = typeof params.id === 'string' ? params.id : '';
-      const found = id ? await getAnalysis(id).catch(() => null) ?? await loadCurrentAnalysis(id) : null;
+      const saved = id ? await getAnalysis(id).catch(() => null) : null;
+      const found = saved ?? (id ? await loadCurrentAnalysis(id) : null);
       if (!cancelled) {
         setAnalysis(found);
-        if (found) void captureEvent('report_opened');
+        if (found) void captureEvent(saved ? 'saved_report_opened' : 'report_opened');
         setCollectionName(found?.collection ?? '');
         setTagText(found?.tags?.join(', ') ?? '');
         setNotes(found?.notes ?? '');
@@ -145,6 +146,7 @@ export default function AnalysisScreen() {
       </View>
 
       {params.saveWarning ? <Text accessibilityRole="alert" style={{ padding: 14, color: Colors.warning, backgroundColor: Colors.warningLight }}>History could not be saved. Export this report before leaving or refreshing.</Text> : null}
+      {storageMessage ? <Text accessibilityLiveRegion="polite" style={{ padding: 12, color: Colors.primary }}>{storageMessage}</Text> : null}
       {exportStatus ? <Text accessibilityLiveRegion="polite" style={{ padding: 12, backgroundColor: Colors.accentLight, color: Colors.primary }}>{exportStatus}</Text> : null}
       <AnalysisResult
         analysis={analysis}

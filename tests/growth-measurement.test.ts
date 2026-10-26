@@ -41,3 +41,12 @@ test('consented session survives reload, expires after inactivity, excludes QA a
   const c=createClient(options);c.init();c.record('view','help','surface');await c.flush();assert.notEqual(batches.at(-1)![0].session,old.id);c.setConsent(false);
  }finally{a.setConsent(false);b.setConsent(false);for(const[k,v]of Object.entries(saved))v?Object.defineProperty(globalThis,k,v):Reflect.deleteProperty(globalThis,k);}
 });
+
+test('connection and persistence steps do not inflate core completion or retention',()=>{
+ const visitor=randomUUID(),session=randomUUID();
+ const e=(changes:Partial<LoopEvent>):LoopEvent=>({id:randomUUID(),visitor,session,product:'medlit',version:LOOP_VERSION,event:'step_completed',environment:'production',surface:'settings',target:'connect-ai',at:'2026-10-02T12:00:00Z',provider:'openai',...changes});
+ const rows=[e({event:'step_started'}),e({}),e({event:'step_failed',reason:'billing'}),e({target:'save-device'}),e({target:'open-saved-analysis'})];
+ const r=growthSummary(rows,'medlit','2026-10-01','2026-10-26');
+ assert.equal(r.firstObservedCompleters,0);assert.equal(r.connectionByProvider?.openai.connectedSessions,1);assert.equal(r.persistence.deviceSavedSessions,1);assert.equal(r.failuresByReason.billing,1);
+ assert.equal(validateEvent(e({provider:'PRIVATE KEY' as any})),false);assert.equal(validateEvent(e({reason:'PRIVATE ERROR' as any})),false);assert.equal(validateEvent(e({product:'synaptik'})),false);
+});

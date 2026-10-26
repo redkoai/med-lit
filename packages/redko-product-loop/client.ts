@@ -63,7 +63,7 @@ export function createClient(options:Options){
   }catch{if(allowed)delivery='failed';return false;}
   finally{clearTimeout(timeout);requests.delete(request);notify();}
  }
- function record(event:LoopEvent['event'],surface:LoopEvent['surface'],target:LoopEvent['target'],extra:Partial<Pick<LoopEvent,'value'|'x'|'y'|'viewport'>>={}){
+ function record(event:LoopEvent['event'],surface:LoopEvent['surface'],target:LoopEvent['target'],extra:Partial<Pick<LoopEvent,'value'|'x'|'y'|'viewport'|'provider'|'reason'>>={}){
   if(!allowed||privacySignal()||!identity||!supported())return false;
   if(Date.now()-identity.createdAt>=30*DAY)load();
   if(!identity||!allowed)return false;
