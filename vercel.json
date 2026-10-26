@@ -1,6 +1,6 @@
 {
   "installCommand": "npm ci",
-  "buildCommand": "EXPO_NO_DOTENV=1 EXPO_PUBLIC_SITE_URL=https://medlit.theredko.com ./node_modules/.bin/expo export --platform web && node scripts/check-web-security.mjs",
+  "buildCommand": "EXPO_NO_DOTENV=1 EXPO_PUBLIC_SITE_URL=https://medlit-evidence-appraisal.vercel.app ./node_modules/.bin/expo export --platform web && node scripts/check-web-security.mjs",
   "outputDirectory": "dist",
   "framework": null,
   "cleanUrls": true,

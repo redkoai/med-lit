@@ -13,4 +13,4 @@ Disallow: /alerts
 Disallow: /shared
 Disallow: /api/
 
-Sitemap: https://medlit.theredko.com/sitemap.xml
+Sitemap: https://medlit-evidence-appraisal.vercel.app/sitemap.xml
