@@ -32,7 +32,20 @@ export async function providerFetch(provider: AIProvider, url: string, init: Req
       ? `${PROVIDERS[provider].name} took too long to respond. Try again or choose a faster model.`
       : `${PROVIDERS[provider].name} could not be reached. Check your connection and whether your key allows requests from this website.`, timedOut ? 'timeout' : 'network');
   }
-  if (!response.ok) throw providerError(provider, response.status);
+  if (!response.ok) {
+    // Read only documented codes. Never expose or retain upstream messages,
+    // which can echo credentials, prompts or account information.
+    let payload: any;
+    try { payload = await response.json(); } catch { /* Fall back to HTTP status. */ }
+    const details = Array.isArray(payload?.error?.details) ? payload.error.details : [];
+    if (provider === 'gemini' && details.some((detail: any) => detail?.['@type'] === 'type.googleapis.com/google.rpc.ErrorInfo' && detail?.reason === 'API_KEY_INVALID')) {
+      throw new ProviderRequestError('Gemini: The key was not accepted. Copy a valid Gemini API key from Google AI Studio and try again.', 'credentials');
+    }
+    if (provider === 'openai' && payload?.error?.code === 'insufficient_quota') {
+      throw new ProviderRequestError('OpenAI: Your API quota is exhausted. Check API billing and project limits, then retry.', 'billing');
+    }
+    throw providerError(provider, response.status);
+  }
   return response;
 }
 

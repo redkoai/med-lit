@@ -72,3 +72,14 @@ test('device save failure does not manufacture a persisted report',async()=>{
  await assert.rejects(updateLibrary(storage,null,()=>[]),/Quota/);
  assert.deepEqual(await readLibrary(storage),[]);
 });
+test('documented provider codes distinguish invalid Gemini keys and exhausted OpenAI billing without echoing upstream text',async()=>{
+ const original=globalThis.fetch;
+ try {
+  globalThis.fetch=async()=>Response.json({error:{message:keys.gemini,details:[{'@type':'type.googleapis.com/google.rpc.ErrorInfo',reason:'API_KEY_INVALID'}]}},{status:400});
+  await assert.rejects(callProvider('gemini',keys.gemini,'fixture','JSON','JSON'),e=>providerFailureReason(e)==='credentials'&&!String(e).includes(keys.gemini));
+  globalThis.fetch=async()=>Response.json({error:{message:keys.openai,code:'insufficient_quota'}},{status:429});
+  await assert.rejects(callProvider('openai',keys.openai,'fixture','JSON','JSON'),e=>providerFailureReason(e)==='billing'&&!String(e).includes(keys.openai));
+  globalThis.fetch=async()=>Response.json({error:{message:'API_KEY_INVALID',details:[{reason:'private content'}]}},{status:400});
+  await assert.rejects(callProvider('gemini',keys.gemini,'fixture','JSON','JSON'),e=>providerFailureReason(e)==='model'&&!String(e).includes('private content'));
+ } finally {globalThis.fetch=original;}
+});
