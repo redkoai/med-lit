@@ -1,7 +1,7 @@
 import {productLoop} from './firstPartyAnalytics';
 /** Opt-in, allowlisted events only. No autocapture, replay, identity, URL or paper data. */
-export type ProductEvent = 'ai_connected' | 'appraisal_started' | 'appraisal_completed' | 'appraisal_failed' | 'report_opened' | 'tutorial_opened' | 'account_created';
-export const EVENTS: readonly string[] = ['ai_connected', 'appraisal_started', 'appraisal_completed', 'appraisal_failed', 'report_opened', 'tutorial_opened', 'account_created'];
+export type ProductEvent = 'ai_connected' | 'appraisal_started' | 'appraisal_completed' | 'appraisal_failed' | 'report_opened' | 'tutorial_opened' | 'account_created' | 'source_packet_prepared';
+export const EVENTS: readonly string[] = ['ai_connected', 'appraisal_started', 'appraisal_completed', 'appraisal_failed', 'report_opened', 'tutorial_opened', 'account_created', 'source_packet_prepared'];
 export const ANALYTICS_CONSENT_KEY = 'medlit.analytics.consent.v1';
 const ID_KEY = 'medlit.analytics.id.v1';
 export function analyticsConfigured() {
@@ -33,6 +33,7 @@ export async function captureEvent(event: ProductEvent, input: Record<string, un
     if (event === 'appraisal_started') productLoop.record('flow_started','analysis','start-analysis');
     if (event === 'appraisal_completed') productLoop.record('flow_completed','analysis','save-analysis');
     if (event === 'appraisal_failed') productLoop.record('flow_failed','analysis','start-analysis');
+    if (event === 'source_packet_prepared') productLoop.record('click','analysis','fetch-source');
     // ProductLoopObserver alone owns page views. Report/tutorial opens are not retention.
     return; // Only one behavioral collector may receive this event.
   }

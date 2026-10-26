@@ -6,7 +6,7 @@ import {privacySignal} from '../../packages/redko-product-loop/client';
 import type {LoopEvent} from '../../packages/redko-product-loop/core';
 import {setAnalyticsConsent} from '../services/productAnalytics';
 import {guide as s} from './GuidePage';
-const surfaces:Record<string,LoopEvent['surface']>={'/':'home','/analysis':'analysis','/history':'library','/settings':'settings','/learn':'help','/faq':'help','/methodology':'help','/privacy':'legal','/terms':'legal','/import':'search','/shared':'sharing','/compare':'analysis','/connect':'settings'};
+const surfaces:Record<string,LoopEvent['surface']>={'/':'home','/analysis':'analysis','/chatgpt':'analysis','/history':'library','/settings':'settings','/learn':'help','/faq':'help','/methodology':'help','/privacy':'legal','/terms':'legal','/import':'search','/shared':'sharing','/compare':'analysis','/connect':'settings'};
 export function ProductLoopObserver(){
  const path=usePathname();
  useEffect(()=>{if(Platform.OS!=='web')return;productLoop.init();return productLoop.observe(document.body);},[]);

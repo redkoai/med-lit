@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors as C } from '../src/constants/colors';
 import { WorkspaceHeader } from '../src/components/WorkspaceHeader';
 import { PageMeta } from '../src/components/PageMeta';
+import { captureEvent } from '../src/services/productAnalytics';
 import { fetchArticle } from '../src/services/articleFetcher';
 import { hasValidIdentifier, parseArticleUrl } from '../src/services/urlParser';
 import { createChatPacket, importChatResponse, MAX_HANDOFF_RESPONSE, type ChatPacket } from '../src/services/chatHandoff';
@@ -39,6 +40,7 @@ export default function ChatHandoffScreen() {
       setStatus('Retrieving the paper…');
       const article = await fetchArticle(identifier, { unpaywallEmail: settings.unpaywallEmail, onProgress: setStatus });
       setPacket(createChatPacket(article, identifier)); setStatus('Your source packet is ready.');
+      void captureEvent('source_packet_prepared', {provider:'handoff'});
     } catch (err) { setError(err instanceof Error ? err.message : 'The paper could not be retrieved. Try a PubMed link or DOI.'); }
     finally { setBusy(false); inFlight.current = false; }
   };
@@ -51,12 +53,14 @@ export default function ChatHandoffScreen() {
     if (!packet || inFlight.current) return;
     inFlight.current = true; setBusy(true); setError('');
     try {
+      void captureEvent('appraisal_started', {provider:'handoff'});
       setStatus('Matching the response against the supplied source…');
       const analysis = importChatResponse(response, packet);
       const saved = settings.saveHistory ? await saveToHistory(analysis) : analysis;
       await cacheCurrentAnalysis(saved);
+      void captureEvent('appraisal_completed', {provider:'handoff',coverage:analysis.appraisal.sourceCoverage.level});
       router.push({ pathname: '/analysis', params: { id: saved.id } });
-    } catch (err) { setError(err instanceof Error ? err.message : 'The response could not be imported.'); }
+    } catch (err) { void captureEvent('appraisal_failed', {provider:'handoff'}); setError(err instanceof Error ? err.message : 'The response could not be imported.'); }
     finally { setBusy(false); inFlight.current = false; }
   };
   return <ScrollView style={s.page} contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" role={'main' as never}>
