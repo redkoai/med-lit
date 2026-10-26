@@ -15,7 +15,7 @@ export const REDKO_NETWORK = [
   {
     "id": "medlit",
     "name": "MedLit",
-    "url": "https://medlit-evidence-appraisal.vercel.app/about",
+    "url": "https://medlit.theredko.com/about",
     "description": "Read research critically and inspect the evidence behind an appraisal."
   },
   {

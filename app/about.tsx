@@ -14,7 +14,7 @@ export default function AboutScreen() {
       description="Our mission is to help people understand how research earns its conclusions—and where the evidence leaves room for doubt."
       path="/about"
       active="about"
-      structuredData={{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"AboutPage",name:"About MedLit and Redko",url:"https://medlit-evidence-appraisal.vercel.app/about"},redkoDirectorySchema("https://medlit-evidence-appraisal.vercel.app/about#redko")]}}
+      structuredData={{"@context":"https://schema.org","@graph":[{"@context":"https://schema.org","@type":"AboutPage",name:"About MedLit and Redko",url:"https://medlit.theredko.com/about"},redkoDirectorySchema("https://medlit.theredko.com/about#redko")]}}
     >
       <View style={s.statement}>
         <Ionicons name="compass-outline" size={38} color={C.accent} />
