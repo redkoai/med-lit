@@ -1,16 +1,21 @@
 /** REDKO Product Loop v1. Shared verbatim with MedLit; no clinical or research content. */
-export const LOOP_VERSION='2026-09-11.1';
+export const LOOP_VERSION='2026-10-26.1';
+export const LEGACY_LOOP_VERSION='2026-09-11.1';
+export const SOURCES=['direct','google','bing','chatgpt','perplexity','gemini','owned','email','social','other','unknown'] as const;
+export type AcquisitionSource=typeof SOURCES[number];
 export const PRODUCTS=['synaptik','medlit'] as const;
 export type Product=typeof PRODUCTS[number];
 export const EVENTS=['view','click','flow_started','flow_completed','flow_failed','feedback','scroll_depth'] as const;
 export const SURFACES=['landing','home','discovery','practice','journal','settings','search','analysis','library','sharing','help','legal'] as const;
 export const TARGETS=['surface','open-discovery','open-practice','preview-practice','save-practice','share-practice','export-summary','filter-control','search-control','start-session','finish-session','stop-session','save-checkin','auth-submit','save-preferences','open-settings','open-help','open-legal','submit-search','fetch-source','start-analysis','save-analysis','export-analysis','import-papers','open-library','share-analysis','feedback-navigation','feedback-clarity','feedback-reliability'] as const;
-export type LoopEvent={id:string;product:Product;visitor:string;session:string;version:typeof LOOP_VERSION;environment:'production'|'preview'|'test';event:typeof EVENTS[number];surface:typeof SURFACES[number];target:typeof TARGETS[number];at:string;value?:number;x?:number;y?:number;viewport?:'small'|'medium'|'large'};
+export type LoopEvent={id:string;product:Product;visitor:string;session:string;version:typeof LOOP_VERSION|typeof LEGACY_LOOP_VERSION;source?:AcquisitionSource;entry?:typeof SURFACES[number];environment:'production'|'preview'|'test';event:typeof EVENTS[number];surface:typeof SURFACES[number];target:typeof TARGETS[number];at:string;value?:number;x?:number;y?:number;viewport?:'small'|'medium'|'large'};
 const uuid=(v:unknown)=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
-const keys=new Set(['id','product','visitor','session','version','environment','event','surface','target','at','value','x','y','viewport']);
+const keys=new Set(['id','product','visitor','session','version','environment','event','surface','target','at','value','x','y','viewport','source','entry']);
 export function validateEvent(value:unknown):value is LoopEvent{
  if(!value||typeof value!=='object'||Array.isArray(value))return false;const e=value as LoopEvent;
- if(Object.keys(e).some(k=>!keys.has(k))||!uuid(e.id)||!uuid(e.visitor)||!uuid(e.session)||e.version!==LOOP_VERSION||!PRODUCTS.includes(e.product)||!EVENTS.includes(e.event)||!SURFACES.includes(e.surface)||!TARGETS.includes(e.target)||!['production','preview','test'].includes(e.environment)||typeof e.at!=='string'||!Number.isFinite(Date.parse(e.at)))return false;
+ if(Object.keys(e).some(k=>!keys.has(k))||!uuid(e.id)||!uuid(e.visitor)||!uuid(e.session)||![LOOP_VERSION,LEGACY_LOOP_VERSION].includes(e.version)||!PRODUCTS.includes(e.product)||!EVENTS.includes(e.event)||!SURFACES.includes(e.surface)||!TARGETS.includes(e.target)||!['production','preview','test'].includes(e.environment)||typeof e.at!=='string'||!Number.isFinite(Date.parse(e.at)))return false;
+ if(e.source!==undefined&&!SOURCES.includes(e.source))return false;
+ if(e.entry!==undefined&&!SURFACES.includes(e.entry))return false;
  if(e.value!==undefined&&(!Number.isFinite(e.value)||e.value<0||e.value>600000))return false;
  if((e.x===undefined)!==(e.y===undefined))return false;
  if(e.x!==undefined&&(!Number.isInteger(e.x)||e.x<0||e.x>9||!Number.isInteger(e.y)||e.y!<0||e.y!>9||e.event!=='click'||!['landing','home','discovery'].includes(e.surface)))return false;

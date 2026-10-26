@@ -1,4 +1,5 @@
-import {LOOP_VERSION,validateEvent,TARGETS,SURFACES,type Product,type LoopEvent} from './core';
+import {LOOP_VERSION,validateEvent,TARGETS,SURFACES,SOURCES,type Product,type LoopEvent} from './core';
+import {classifyAcquisition} from './acquisition';
 type Options={product:Product;url:string;publishableKey:string;productionHosts:string[]};
 type Identity={visitor:string;eraseKey:string;createdAt:number};
 const DAY=86400000;
@@ -13,10 +14,22 @@ export function createClient(options:Options){
  const base=`redko-loop:${options.product}:`,listeners=new Set<()=>void>();
  let allowed=false,identity:Identity|null=null,session='',queue:LoopEvent[]=[],timer:ReturnType<typeof setTimeout>|undefined,initialized=false;
  const requests=new Set<AbortController>();
+ let context:{id:string;visitor:string;source:NonNullable<LoopEvent['source']>;entry:LoopEvent['surface'];qa:boolean;last:number}|null=null;
+ function clearSession(){context=null;try{sessionStorage.removeItem(base+'session');}catch{}}
+ function sessionContext(surface:LoopEvent['surface']){
+  const now=Date.now();
+  if(!context){try{context=JSON.parse(sessionStorage.getItem(base+'session')??'null');}catch{}}
+  if(!context||context.visitor!==identity!.visitor||!Number.isFinite(context.last)||now-context.last>=30*60000||now<context.last||!SURFACES.includes(context.entry)||!SOURCES.includes(context.source)||!/^[0-9a-f-]{36}$/.test(context.id)){
+   context={id:crypto.randomUUID(),visitor:identity!.visitor,source:classifyAcquisition(typeof document==='undefined'?'':document.referrer,window.location.search??'',window.location.hostname),entry:surface,qa:false,last:now};
+  }
+  context.qa=context.qa||new URLSearchParams(window.location.search??'').get('analytics_qa')==='1';
+  context.last=now;session=context.id;try{sessionStorage.setItem(base+'session',JSON.stringify(context));}catch{}
+  return context;
+ }
  let delivery:'idle'|'queued'|'sent'|'failed'='idle';
  const supported=()=>typeof window!=='undefined'&&/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(options.url)&&!!options.publishableKey;
  const notify=()=>listeners.forEach(fn=>fn());
- function stop(){queue=[];clearTimeout(timer);requests.forEach(r=>r.abort());requests.clear();session='';allowed=false;delivery='idle';notify();}
+ function stop(){queue=[];clearTimeout(timer);requests.forEach(r=>r.abort());requests.clear();session='';clearSession();allowed=false;delivery='idle';notify();}
  function identities():Identity[]{
   const history=JSON.parse(localStorage.getItem(base+'previous')??'[]');
   const current=JSON.parse(localStorage.getItem(base+'identity')??'null');
@@ -43,8 +56,9 @@ export function createClient(options:Options){
   if(!allowed||privacySignal()||!identity||!supported()||!batch.length)return false;
   const request=new AbortController();requests.add(request);const timeout=setTimeout(()=>request.abort(),10000);
   try{
-   const response=await fetch(options.url+'/rest/v1/rpc/collect_product_loop',{method:'POST',headers:{apikey:options.publishableKey,'Content-Type':'application/json'},credentials:'omit',referrerPolicy:'no-referrer',signal:request.signal,body:JSON.stringify({batch,erase_key:identity.eraseKey})});
+   const response=await fetch(options.url+'/rest/v1/rpc/collect_product_loop',{method:'POST',headers:{apikey:options.publishableKey,'Content-Type':'application/json'},credentials:'omit',referrerPolicy:'no-referrer',signal:request.signal,keepalive:true,body:JSON.stringify({batch,erase_key:identity.eraseKey})});
    if(!response.ok)throw new Error('Collection failed');
+   const receipt=await response.json();if(receipt?.accepted!==batch.length)throw new Error('Collection not acknowledged');
    if(allowed)delivery='sent';return true;
   }catch{if(allowed)delivery='failed';return false;}
   finally{clearTimeout(timeout);requests.delete(request);notify();}
@@ -53,13 +67,16 @@ export function createClient(options:Options){
   if(!allowed||privacySignal()||!identity||!supported())return false;
   if(Date.now()-identity.createdAt>=30*DAY)load();
   if(!identity||!allowed)return false;
-  const e={id:crypto.randomUUID(),product:options.product,visitor:identity.visitor,session,version:LOOP_VERSION,environment:options.productionHosts.includes(window.location.hostname)?'production' as const:'preview' as const,event,surface,target,at:new Date().toISOString(),...extra};
+  const attribution=sessionContext(surface);
+  const qa=attribution.qa;
+  const e={source:attribution.source,entry:attribution.entry,id:crypto.randomUUID(),product:options.product,visitor:identity.visitor,session,version:LOOP_VERSION,environment:qa?'test' as const:options.productionHosts.includes(window.location.hostname)?'production' as const:'preview' as const,event,surface,target,at:new Date().toISOString(),...extra};
   if(!validateEvent(e))return false;
   queue.push(e);if(queue.length>25)queue.shift();delivery='queued';
   clearTimeout(timer);timer=setTimeout(()=>void flush(),1500);notify();return true;
  }
  function init(){
   if(initialized||typeof window==='undefined')return;initialized=true;load();
+  window.addEventListener('pagehide',()=>{if(allowed)void flush();});
   window.addEventListener('storage',e=>{if(e.key===base+'consent'||e.key===null)load();});
  }
  function setConsent(value:boolean){

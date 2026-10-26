@@ -9,7 +9,7 @@ test('surface arrival is recorded on grant once, without replay or collection af
  const set=(key:string,value:unknown)=>Object.defineProperty(globalThis,key,{configurable:true,writable:true,value});
  const storage={getItem:(k:string)=>saved.get(k)??null,setItem:(k:string,v:string)=>saved.set(k,v),removeItem:(k:string)=>saved.delete(k)};
  set('window',{location:{hostname:'synaptik-beta.vercel.app'},addEventListener(){}});set('localStorage',storage);set('navigator',{});
- set('fetch',async(_url:unknown,options:{body:string})=>{requests.push(JSON.parse(options.body));return {ok:true};});
+ set('fetch',async(_url:unknown,options:{body:string})=>{requests.push(JSON.parse(options.body));return {ok:true,json:async()=>({accepted:JSON.parse(options.body).batch?.length})};});
  const client=createClient({product:'synaptik',url:'https://example.supabase.co',publishableKey:'public-test-key',productionHosts:['synaptik-beta.vercel.app']});
  let stop=()=>{};
  try{

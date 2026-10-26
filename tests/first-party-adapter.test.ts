@@ -7,7 +7,7 @@ test('MedLit maps real appraisal events without forwarding paper data or duplica
  const storage={getItem:(k:string)=>saved.get(k)??null,setItem:(k:string,v:string)=>saved.set(k,v),removeItem:(k:string)=>saved.delete(k)};
  process.env.EXPO_PUBLIC_ENABLE_REDKO_LOOP='true';process.env.EXPO_PUBLIC_REDKO_LOOP_URL='https://example.supabase.co';process.env.EXPO_PUBLIC_REDKO_LOOP_PUBLISHABLE_KEY='public-test-key';
  process.env.EXPO_PUBLIC_ENABLE_MEDLIT_ANALYTICS='true';process.env.EXPO_PUBLIC_ANALYTICS_PRODUCT='medlit';process.env.EXPO_PUBLIC_POSTHOG_KEY='phc_test';process.env.EXPO_PUBLIC_POSTHOG_PROJECT_ID='123';process.env.EXPO_PUBLIC_POSTHOG_HOST='https://us.i.posthog.com';
- put('window',{location:{hostname:'localhost'},localStorage:storage,addEventListener(){}});put('localStorage',storage);put('navigator',{});put('fetch',async(url:string,options:any)=>{requests.push({url,body:JSON.parse(options.body)});return {ok:true};});
+ put('window',{location:{hostname:'localhost'},localStorage:storage,addEventListener(){}});put('localStorage',storage);put('navigator',{});put('fetch',async(url:string,options:any)=>{requests.push({url,body:JSON.parse(options.body)});return {ok:true,json:async()=>({accepted:JSON.parse(options.body).batch?.length})};});
  try{
   const {productLoop}=await import('../src/services/firstPartyAnalytics');
   const {captureEvent,setAnalyticsConsent}=await import('../src/services/productAnalytics');

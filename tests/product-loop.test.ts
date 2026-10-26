@@ -24,7 +24,7 @@ test('browser client never sends before consent, withdrawal drops queue, rotatio
  const install=(name:string,value:unknown)=>Object.defineProperty(globalThis,name,{configurable:true,writable:true,value});
  install('window',{location:{hostname:'test.example'},addEventListener(){}});install('navigator',{});
  install('localStorage',{getItem:(k:string)=>saved.get(k)??null,setItem:(k:string,v:string)=>saved.set(k,v),removeItem:(k:string)=>saved.delete(k)});
- install('fetch',async(url:string,options:any)=>{calls.push({url,body:JSON.parse(options.body)});return{ok:true};});
+ install('fetch',async(url:string,options:any)=>{calls.push({url,body:JSON.parse(options.body)});return{ok:true,json:async()=>({accepted:JSON.parse(options.body).batch?.length})};});
  try{
   const client=createClient({product:'synaptik',url:'https://example.supabase.co',publishableKey:'public',productionHosts:[]});client.init();
   assert.equal(client.record('view','home','surface'),false);assert.equal(saved.size,0);await client.flush();assert.equal(calls.length,0);
